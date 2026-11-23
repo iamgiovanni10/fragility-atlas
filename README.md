@@ -38,6 +38,10 @@ fragility-atlas examples/demo.json --loss 1000000 --hedge --radius 2
 
 The demonstration uses **synthetic inputs and illustrative costs**. Do not interpret output as observed market conditions or investment advice.
 
+## Risk Workbench v0.2 (experimental)
+
+The Streamlit interface now includes four tabs: Risk Overview, Scenario Explorer, Hedge Analysis, and Validation & Reports. The scenario explorer calculates linear P&L for user-entered hypothetical shocks; the hedge panel compares covariance-ellipsoid worst losses before and after the synthetic hedge. Diagnostics independently recompute the hedge constraint but do not establish empirical predictive accuracy or global solver optimality.
+
 ## Interactive dashboard (optional)
 
 Run the Streamlit dashboard locally:
