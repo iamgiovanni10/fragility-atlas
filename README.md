@@ -38,6 +38,17 @@ fragility-atlas examples/demo.json --loss 1000000 --hedge --radius 2
 
 The demonstration uses **synthetic inputs and illustrative costs**. Do not interpret output as observed market conditions or investment advice.
 
+## Interactive dashboard (optional)
+
+Run the Streamlit dashboard locally:
+
+```bash
+python -m pip install -e '.[dashboard]'
+streamlit run dashboard.py
+```
+
+The dashboard shows the synthetic minimum-distance scenario, factor-level P&L attribution, optional illustrative hedge optimization, and a downloadable JSON report. It does **not** provide live market prices, probability calibration, backtesting, or investment recommendations.
+
 ## Mathematical approach
 
 Let `b` be portfolio factor sensitivities, `Σ` a symmetric positive-definite covariance matrix, `x` a vector of factor shocks, and `L > 0` the loss threshold.
