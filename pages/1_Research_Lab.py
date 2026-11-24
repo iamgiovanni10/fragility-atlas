@@ -90,18 +90,23 @@ try:
 except (ValueError, OverflowError) as exc:
     st.error(f"Scenario comparison rejected: {exc}")
     st.stop()
-comparison_rows = [
-    {"scenario": scenario_name, "pnl_usd": result["pnl"],
-     "pnl_pct_of_abs_net_value": (
-         100 * result["pnl"] / abs(portfolio.value)
-         if abs(portfolio.value) > 1e-12 else None
-     )}
-    for scenario_name, result in comparisons.items()
-]
+comparison_rows = []
+for scenario_name, result in comparisons.items():
+    pct = None
+    if abs(portfolio.value) > 1e-12:
+        with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+            candidate = (result["pnl"] / abs(portfolio.value)) * 100.0
+        if np.isfinite(candidate):
+            pct = float(candidate)
+    comparison_rows.append({
+        "scenario": scenario_name,
+        "pnl_usd": result["pnl"],
+        "pnl_pct_of_abs_net_value": pct,
+    })
 st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
 st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"])
 st.caption("Unrecognized factors receive zero shock in the illustrative presets. "
-           "Percentage P&L uses absolute net marked value; it is omitted when net value is zero.")
+           "Percentage P&L uses absolute net marked value; it is omitted when net value is near zero or the ratio is not finite.")
 
 st.subheader("Historical factor-shock replay")
 st.caption("Upload chronological factor shocks in decimal units, one column per portfolio factor. "
