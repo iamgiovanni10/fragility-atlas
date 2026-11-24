@@ -12,7 +12,8 @@ import streamlit as st
 
 from fragility_atlas.core import Model
 from fragility_atlas.portfolio import read_portfolio_csv
-from fragility_atlas.stress import evaluate_scenarios
+from fragility_atlas.stress import evaluate_scenarios, replay_factor_history
+from fragility_atlas.factor_history import read_factor_history_csv
 from fragility_atlas.historical import historical_summary
 from fragility_atlas.validation import rolling_historical_var
 from fragility_atlas.sensitivity import reverse_stress_sensitivity
@@ -92,6 +93,26 @@ st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"])
 st.caption("Unrecognized factors receive zero shock in the illustrative presets. "
            "Percentage P&L uses absolute net marked value; it is omitted when net value is zero.")
 
+st.subheader("Historical factor-shock replay")
+st.caption("Upload chronological factor shocks in decimal units, one column per portfolio factor. "
+           "These must be independently sourced if interpreted as historical market observations.")
+factor_history_file = st.file_uploader("Factor history CSV (max 2 MB)", type=["csv"],
+                                      key="factor_history")
+replay = None
+if factor_history_file is not None:
+    try:
+        if factor_history_file.size > 2_000_000:
+            raise ValueError("Factor history CSV exceeds 2 MB")
+        factor_history = read_factor_history_csv(
+            factor_history_file.getvalue().decode("utf-8-sig"), portfolio.factors
+        )
+        replay = replay_factor_history(portfolio.exposure, portfolio.factors, factor_history)
+        st.line_chart(pd.DataFrame({"Scenario P&L (USD)": replay}))
+        st.metric("Worst observed replay P&L (USD)", f"${min(replay):,.2f}")
+        st.caption("Fixed linear exposures; rows are observations, not independently verified crisis dates.")
+    except (ValueError, UnicodeDecodeError) as exc:
+        st.error(f"Historical factor replay rejected: {exc}")
+
 st.subheader("Historical risk and VaR coverage")
 st.caption("Upload one chronological daily simple-return column in decimal units, e.g. -0.02 for -2%.")
 returns_file = st.file_uploader("Upload historical returns CSV (max 2 MB)", type=["csv"], key="returns")
@@ -170,6 +191,7 @@ report = {"metadata": {"app": "Fragility Atlas Research Lab",
           "portfolio": {"factor_names": portfolio.factors, "value": portfolio.value,
                         "exposure": portfolio.exposure.tolist()},
           "stress": stress, "scenario_comparison": comparisons,
+          "historical_factor_replay": replay,
           "position_attribution": position_attribution,
           "historical": summary, "coverage": backtest,
           "sensitivity": sensitivity}
