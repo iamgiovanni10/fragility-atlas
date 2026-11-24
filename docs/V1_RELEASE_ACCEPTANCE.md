@@ -50,3 +50,11 @@ Status: **IN DEVELOPMENT — NOT RELEASED**. This document is a scope and accept
 - Later integration tests include Streamlit AppTest and workbench input guardrails; final result of the newer runs must be checked before release.
 - Research Lab now includes JSON, CSV and PDF exports and a UTC generation timestamp; downloaded-file behavior and deployed navigation still require user-journey verification.
 - No independent market calibration or globally certified hedge optimization has been performed.
+
+## Latest acceptance evidence (2026-11-24)
+
+- CI run [45489211860](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45489211860) passed both Python 3.10 and 3.12 for commit `515b99b`, including pytest, Streamlit AppTest, Ruff, build, wheel installation, dependency check and CLI smoke test.
+- Later changes include documentation-only README replacement; CI for the exact eventual release commit still must be checked.
+- Generated PDFs are now parsed with pypdf in tests, and CSV Unicode/quoting round-trip is covered. Browser-level downloads and a staging deployment have **not** been independently verified.
+- SHA-256 input fingerprints are tested for byte-level provenance; they do not prove data authenticity.
+- Release blockers remain: staged end-to-end user journey, responsive and keyboard checks, public deployment smoke test, final release version/tag and review of the exact merge commit.
