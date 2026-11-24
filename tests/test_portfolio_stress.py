@@ -48,3 +48,15 @@ def test_stress_attribution_and_history():
 def test_stress_missing_factor_rejected():
     with pytest.raises(ValueError):
         evaluate_scenarios([1, 2], ["a", "b"], {"bad": {"a": 0.1}})
+
+
+def test_numeric_overflow_rejected():
+    with pytest.raises(ValueError, match="overflow"):
+        read_portfolio_csv("position_id,quantity,price_usd,eq\nA,1e308,1e308,1e308\n")
+
+
+def test_excessive_factor_columns_rejected():
+    factors = ",".join(f"factor{i}" for i in range(51))
+    values = ",".join("1" for _ in range(51))
+    with pytest.raises(ValueError, match="50 factor"):
+        read_portfolio_csv(f"position_id,quantity,price_usd,{factors}\nA,1,1,{values}\n")
