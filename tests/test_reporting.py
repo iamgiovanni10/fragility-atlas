@@ -52,3 +52,35 @@ def test_csv_spreadsheet_formula_injection_is_escaped():
     assert any(row[0] == "historical.=dangerous" for row in rows)
     assert any(row[2].startswith(chr(9)) and "SUM" in row[2] for row in rows)
     assert any(row[2].startswith(chr(9)) and "HYPERLINK" in row[2] for row in rows)
+
+
+def test_export_formats_share_input_provenance():
+    report = {
+        **REPORT,
+        "metadata": {
+            "source": "synthetic",
+            "portfolio_input_sha256": "a" * 64,
+            "returns_input_sha256": "b" * 64,
+            "generated_at_utc": "2026-11-24T18:00:00+00:00",
+            "limitations": "linear exposures",
+        },
+    }
+    json_data = json.loads(report_json(report))
+    csv_rows = list(csv.reader(io.StringIO(report_csv(report))))
+    assert json_data["metadata"]["portfolio_input_sha256"] == "a" * 64
+    assert ["metadata.portfolio_input_sha256", "value", "a" * 64] in csv_rows
+    assert ["metadata.returns_input_sha256", "value", "b" * 64] in csv_rows
+    assert ["metadata.generated_at_utc", "value", "2026-11-24T18:00:00+00:00"] in csv_rows
+    assert report_pdf(report).startswith(b"%PDF")
+
+
+def test_pdf_escapes_untrusted_markup_in_fields():
+    report = {**REPORT, "metadata": {"source": "<b>untrusted</b> & research"}}
+    pdf = report_pdf(report)
+    assert pdf.startswith(b"%PDF")
+
+
+def test_pdf_rejects_oversized_report():
+    report = {**REPORT, "metadata": {"many": list(range(1501))}}
+    with pytest.raises(ValueError, match="too large"):
+        report_pdf(report)
