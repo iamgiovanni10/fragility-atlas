@@ -3,7 +3,6 @@
 All example observations are synthetic. Uploaded data is processed in session only.
 """
 import io
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,6 +18,7 @@ from fragility_atlas.historical import historical_summary
 from fragility_atlas.validation import rolling_historical_var
 from fragility_atlas.sensitivity import reverse_stress_sensitivity
 from fragility_atlas.reporting import report_json, report_csv, report_pdf
+from fragility_atlas.provenance import sha256_input_bytes
 
 st.set_page_config(page_title="Research Lab | Fragility Atlas", layout="wide")
 st.title("Research Lab")
@@ -40,7 +40,7 @@ try:
         portfolio_bytes = uploaded.getvalue()
         csv_text = portfolio_bytes.decode("utf-8-sig")
     portfolio = read_portfolio_csv(csv_text)
-    portfolio_sha256 = hashlib.sha256(portfolio_bytes).hexdigest()
+    portfolio_sha256 = sha256_input_bytes(portfolio_bytes)
 except (ValueError, UnicodeDecodeError) as exc:
     st.error(f"Portfolio input rejected: {exc}")
     st.stop()
@@ -125,7 +125,7 @@ if factor_history_file is not None:
         factor_history = read_factor_history_csv(
             factor_history_bytes.decode("utf-8-sig"), portfolio.factors
         )
-        factor_history_sha256 = hashlib.sha256(factor_history_bytes).hexdigest()
+        factor_history_sha256 = sha256_input_bytes(factor_history_bytes)
         replay = replay_factor_history(portfolio.exposure, portfolio.factors, factor_history)
         st.line_chart(pd.DataFrame({"Scenario P&L (USD)": replay}))
         st.metric("Worst observed replay P&L (USD)", f"${min(replay):,.2f}")
@@ -141,7 +141,7 @@ if returns_file is None:
     rng = np.random.default_rng(20261124)
     returns = rng.normal(0.0002, 0.012, 600)
     source = "Fixed-seed synthetic normal draws"
-    returns_sha256 = hashlib.sha256(returns.tobytes()).hexdigest()
+    returns_sha256 = sha256_input_bytes(returns.tobytes())
 else:
     if returns_file.size > 2_000_000:
         st.error("Returns CSV exceeds the 2 MB limit.")
@@ -155,7 +155,7 @@ else:
             raise ValueError("Returns CSV exceeds 10,000 observations")
         returns = pd.to_numeric(df.iloc[:, 0], errors="raise").to_numpy(dtype=float)
         source = "User-supplied CSV (unverified)"
-        returns_sha256 = hashlib.sha256(returns_bytes).hexdigest()
+        returns_sha256 = sha256_input_bytes(returns_bytes)
     except (ValueError, pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as exc:
         st.error(f"Returns CSV rejected: {exc}")
         st.stop()
