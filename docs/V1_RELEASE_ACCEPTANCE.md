@@ -35,3 +35,11 @@ Status: **IN DEVELOPMENT — NOT RELEASED**. This document is a scope and accept
 - The current reporting path is JSON; PDF and CSV deliverables require implementation and tests.
 
 **Release rule:** do not mark 1.0 complete or merge the release branch until every gate has an implementation, reproducible test evidence, and a documented limitation where appropriate.
+
+## Implementation progress (2026-11-24)
+
+- Historical metrics: implementation, unit tests and methodology committed; CI execution pending.
+- Portfolio CSV aggregation: implementation, synthetic fixture, unit tests and methodology committed; dashboard integration pending.
+- Hypothetical stress and fixed-exposure historical factor replay: implementation and unit tests committed; real-data provenance and historical validation pending.
+- All other release gates remain open. This is **not** a release readiness statement.
+
