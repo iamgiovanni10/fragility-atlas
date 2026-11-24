@@ -24,6 +24,12 @@ def report_csv(report):
     out = io.StringIO(newline="")
     writer = csv.writer(out)
     writer.writerow(["section", "metric", "value"])
+    def safe_csv(value):
+        # Prevent spreadsheet software from interpreting untrusted text as a formula.
+        if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@", "\\t", "\\r")):
+            return "\\t" + value
+        return value
+
     def walk(section, value):
         if isinstance(value, dict):
             for k, v in value.items():
@@ -32,11 +38,11 @@ def report_csv(report):
             for i, v in enumerate(value):
                 walk(f"{section}[{i}]", v)
         elif value is None:
-            writer.writerow([section, "value", ""])
+            writer.writerow([safe_csv(section), "value", ""])
         elif isinstance(value, (str, bool, int, float)):
             if isinstance(value, float) and not math.isfinite(value):
                 raise ValueError("nonfinite report value")
-            writer.writerow([section, "value", value])
+            writer.writerow([safe_csv(section), "value", safe_csv(value)])
         else:
             raise ValueError(f"unsupported report value at {section}")
     walk("", report)
