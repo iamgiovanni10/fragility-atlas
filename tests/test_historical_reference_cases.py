@@ -29,11 +29,11 @@ def test_drawdown_includes_initial_wealth_peak():
 
 @pytest.mark.parametrize("returns,notional,pattern", [
     ([-1e-2, 1e308], 1e308, "historical loss"),
-    ([1e308, 1e308], 1.0, "expected shortfall"),
+    ([1e308, 1e308, 1e308, 1e308], 1.0, "expected shortfall"),
 ])
 def test_historical_var_rejects_overflow(returns, notional, pattern):
     with pytest.raises(ValueError, match=pattern):
-        historical_var_es(returns, confidence=0.75, portfolio_value=notional)
+        historical_var_es(returns, confidence=0.5, portfolio_value=notional)
 
 
 def test_drawdown_rejects_compounding_overflow():
