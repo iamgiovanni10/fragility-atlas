@@ -71,3 +71,13 @@ def test_scenario_overflow_is_rejected():
 def test_duplicate_position_id_rejected():
     with pytest.raises(ValueError, match="unique"):
         read_portfolio_csv("position_id,quantity,price_usd,eq\nA,1,1,2\nA,1,1,3\n")
+
+
+def test_stress_rejects_numeric_overflow():
+    with pytest.raises(ValueError, match="overflow"):
+        evaluate_scenarios([1e308], ["eq"], {"extreme": {"eq": 1e308}})
+
+
+def test_historical_replay_rejects_numeric_overflow():
+    with pytest.raises(ValueError, match="overflow"):
+        replay_factor_history([1e308], ["eq"], [[1e308], [0.1]])
