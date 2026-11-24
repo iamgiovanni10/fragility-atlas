@@ -29,6 +29,8 @@ def historical_var_es(returns, confidence=0.99, portfolio_value=1.0):
     if not np.isfinite(portfolio_value) or portfolio_value <= 0:
         raise ValueError("portfolio_value must be finite and positive")
     losses = np.sort(-r * portfolio_value)
+    if not np.all(np.isfinite(losses)):
+        raise ValueError("numeric overflow in historical loss calculation")
     n = len(losses)
     tail_mass = (1 - confidence) * n
     full = int(np.floor(tail_mass))
@@ -37,6 +39,8 @@ def historical_var_es(returns, confidence=0.99, portfolio_value=1.0):
     if fractional > 1e-12:
         tail_sum += fractional * float(losses[-full - 1])
     es = tail_sum / tail_mass
+    if not np.isfinite(es):
+        raise ValueError("numeric overflow in expected shortfall")
     index = int(np.ceil(confidence * n) - 1)
     var = float(losses[index])
     return {"confidence": float(confidence), "observations": n,
@@ -49,6 +53,8 @@ def drawdown_statistics(returns):
     """Compounded wealth starts at 1; reports first peak-to-trough maximum drawdown."""
     r = _returns(returns)
     wealth = np.r_[1.0, np.cumprod(1.0 + r)]
+    if not np.all(np.isfinite(wealth)):
+        raise ValueError("numeric overflow in compounded wealth")
     peaks = np.maximum.accumulate(wealth)
     drawdowns = wealth / peaks - 1.0
     trough = int(np.argmin(drawdowns))
@@ -67,5 +73,7 @@ def historical_summary(returns, confidence=0.99, portfolio_value=1.0,
     metrics.update(drawdown_statistics(r))
     metrics["mean_daily_return"] = float(np.mean(r))
     metrics["annualized_volatility"] = float(np.std(r, ddof=1) * np.sqrt(periods_per_year))
+    if not np.isfinite(metrics["mean_daily_return"]) or not np.isfinite(metrics["annualized_volatility"]):
+        raise ValueError("numeric overflow in return summary")
     metrics["periods_per_year"] = periods_per_year
     return metrics
