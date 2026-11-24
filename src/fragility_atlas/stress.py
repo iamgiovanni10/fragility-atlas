@@ -24,8 +24,11 @@ def evaluate_scenarios(exposure, factor_names, scenarios):
         if not np.all(np.isfinite(x)):
             raise ValueError("nonfinite scenario shock")
         contribution = b * x
+        total = float(np.sum(contribution))
+        if not np.all(np.isfinite(contribution)) or not np.isfinite(total):
+            raise ValueError("numeric overflow in scenario P&L")
         results[scenario_name] = {
-            "pnl": float(np.sum(contribution)),
+            "pnl": total,
             "factor_pnl": dict(zip(names, map(float, contribution))),
             "shocks": dict(zip(names, map(float, x))),
         }
@@ -47,4 +50,7 @@ def replay_factor_history(exposure, factor_names, history):
         raise ValueError("history must contain at least two factor observations")
     if not np.all(np.isfinite(h)) or not np.all(np.isfinite(b)):
         raise ValueError("nonfinite history or exposure")
-    return (h @ b).tolist()
+    pnl = h @ b
+    if not np.all(np.isfinite(pnl)):
+        raise ValueError("numeric overflow in historical replay P&L")
+    return pnl.tolist()
