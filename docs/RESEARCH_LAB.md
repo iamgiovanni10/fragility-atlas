@@ -19,6 +19,10 @@ Use the **Research Lab** page in Streamlit navigation. The original v0.3 dashboa
 
 **Sensitivity**: a diagonal covariance matrix with an explicitly selected volatility is an illustrative assumption, **not** estimated from uploaded portfolio or return data.
 
+## Scenario comparison
+
+The Research Lab evaluates the custom scenario alongside three explicitly **illustrative** presets: broad risk-off, rates up, and credit widening. Presets are not historical crisis replays. Factors not recognized by a preset receive zero shock. The table reports USD P&L and, when net marked portfolio value is nonzero, P&L divided by its absolute value. Factor and position P&L must reconcile or the page stops with an error. The comparison is included in exported reports.
+
 ## Important limitations
 
 - The portfolio's marked value and the historical risk notional are separate inputs. The return series is not automatically reconciled to imported holdings.
