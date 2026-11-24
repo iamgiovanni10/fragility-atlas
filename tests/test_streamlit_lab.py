@@ -37,3 +37,14 @@ def test_research_lab_custom_equities_shock_changes_pnl():
     assert not app.exception, [str(x.message) for x in app.exception]
     after = next(str(x.value) for x in app.metric if x.label == "Linear scenario P&L (USD)")
     assert before != after
+
+
+def test_research_lab_backtest_visualization():
+    app = AppTest.from_file(str(ROOT / "pages" / "1_Research_Lab.py"), default_timeout=60).run()
+    assert not app.exception, [str(x.message) for x in app.exception]
+    assert any("Out-of-sample VaR backtest" in str(x.value) for x in app.markdown)
+    assert any("VaR exceedances" in str(x.value) for x in app.markdown)
+    tables = [x.value for x in app.dataframe]
+    exceedances = next(t for t in tables if "VaR forecast (USD)" in t.columns)
+    assert len(exceedances) == 4
+    assert (exceedances["Realized loss (USD)"] > exceedances["VaR forecast (USD)"]).all()
