@@ -3,6 +3,7 @@
 All example observations are synthetic. Uploaded data is processed in session only.
 """
 import io
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,6 +38,7 @@ try:
             st.stop()
         csv_text = uploaded.getvalue().decode("utf-8-sig")
     portfolio = read_portfolio_csv(csv_text)
+    portfolio_sha256 = hashlib.sha256(csv_text.encode("utf-8")).hexdigest()
 except (ValueError, UnicodeDecodeError) as exc:
     st.error(f"Portfolio input rejected: {exc}")
     st.stop()
@@ -99,13 +101,16 @@ st.caption("Upload chronological factor shocks in decimal units, one column per 
 factor_history_file = st.file_uploader("Factor history CSV (max 2 MB)", type=["csv"],
                                       key="factor_history")
 replay = None
+factor_history_sha256 = None
 if factor_history_file is not None:
     try:
         if factor_history_file.size > 2_000_000:
             raise ValueError("Factor history CSV exceeds 2 MB")
+        factor_history_bytes = factor_history_file.getvalue()
         factor_history = read_factor_history_csv(
-            factor_history_file.getvalue().decode("utf-8-sig"), portfolio.factors
+            factor_history_bytes.decode("utf-8-sig"), portfolio.factors
         )
+        factor_history_sha256 = hashlib.sha256(factor_history_bytes).hexdigest()
         replay = replay_factor_history(portfolio.exposure, portfolio.factors, factor_history)
         st.line_chart(pd.DataFrame({"Scenario P&L (USD)": replay}))
         st.metric("Worst observed replay P&L (USD)", f"${min(replay):,.2f}")
@@ -121,18 +126,21 @@ if returns_file is None:
     rng = np.random.default_rng(20261124)
     returns = rng.normal(0.0002, 0.012, 600)
     source = "Fixed-seed synthetic normal draws"
+    returns_sha256 = hashlib.sha256(returns.tobytes()).hexdigest()
 else:
     if returns_file.size > 2_000_000:
         st.error("Returns CSV exceeds the 2 MB limit.")
         st.stop()
     try:
-        df = pd.read_csv(io.BytesIO(returns_file.getvalue()))
+        returns_bytes = returns_file.getvalue()
+        df = pd.read_csv(io.BytesIO(returns_bytes))
         if df.shape[1] != 1:
             raise ValueError("CSV must contain exactly one return column")
         if len(df) > 10000:
             raise ValueError("Returns CSV exceeds 10,000 observations")
         returns = pd.to_numeric(df.iloc[:, 0], errors="raise").to_numpy(dtype=float)
         source = "User-supplied CSV (unverified)"
+        returns_sha256 = hashlib.sha256(returns_bytes).hexdigest()
     except (ValueError, pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as exc:
         st.error(f"Returns CSV rejected: {exc}")
         st.stop()
@@ -183,7 +191,11 @@ except (ValueError, np.linalg.LinAlgError) as exc:
 
 report = {"metadata": {"app": "Fragility Atlas Research Lab",
                        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-                       "risk_conventions": "one-period empirical VaR (higher order statistic), fractional-tail ES; daily simple returns",
+                       "risk_conventions": "one-period empirical inverse-CDF VaR, fractional-tail ES; daily simple returns",
+                       "portfolio_input_sha256": portfolio_sha256,
+                       "returns_input_sha256": returns_sha256,
+                       "factor_history_input_sha256": factor_history_sha256,
+                       "synthetic_returns_seed": 20261124 if returns_file is None else None,
                        "factor_covariance": "illustrative independent factors with user-assumed identical volatility",
                        "source": source,
                        "portfolio_source": "synthetic example" if uploaded is None else "user-supplied CSV",
