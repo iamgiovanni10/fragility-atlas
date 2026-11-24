@@ -25,3 +25,17 @@ def test_drawdown_includes_initial_wealth_peak():
     assert result["maximum_drawdown"] == pytest.approx(-0.2)
     assert result["peak_index"] == 0
     assert result["trough_index"] == 1
+
+
+@pytest.mark.parametrize("returns,notional,pattern", [
+    ([-1e-2, 1e308], 1e308, "historical loss"),
+    ([1e308, 1e308], 1.0, "expected shortfall"),
+])
+def test_historical_var_rejects_overflow(returns, notional, pattern):
+    with pytest.raises(ValueError, match=pattern):
+        historical_var_es(returns, confidence=0.75, portfolio_value=notional)
+
+
+def test_drawdown_rejects_compounding_overflow():
+    with pytest.raises(ValueError, match="compounded wealth"):
+        drawdown_statistics([1e308, 1e308])
