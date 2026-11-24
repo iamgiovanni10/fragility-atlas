@@ -31,7 +31,9 @@ def main():
             shock = page.get_by_role("spinbutton", name="equities shock (%)")
             shock.fill("-10")
             shock.press("Tab")
-            expect(page.get_by_role("heading", name="Research Lab", exact=True)).to_be_visible(timeout=60000)
+            # Wait for the new numerical result and the completed rerun, not the unchanged heading.
+            expect(page.get_by_text("$-52,200.00", exact=True)).to_be_visible(timeout=60000)
+            expect(page.get_by_test_id("stStatusWidget")).to_be_hidden(timeout=60000)
 
             for label, extension in (
                 ("Download JSON", ".json"),
@@ -41,12 +43,15 @@ def main():
                 with page.expect_download(timeout=60000) as download_info:
                     page.get_by_role("button", name=label, exact=True).click()
                 download = download_info.value
+                failure = download.failure()
+                assert failure is None, f"{label} failed: {failure}"
                 data = Path(download.path()).read_bytes()
                 assert data, f"Empty {extension} download"
                 if extension == ".json":
                     report = json.loads(data.decode("utf-8"))
                     assert "portfolio_input_sha256" in report["metadata"]
                     assert "expected_shortfall" in report["historical"]
+                    assert report["stress"]["pnl"] == -52200.0
                 elif extension == ".csv":
                     rows = list(csv.reader(io.StringIO(data.decode("utf-8-sig"))))
                     assert any(row[0] == "metadata.portfolio_input_sha256" for row in rows)
