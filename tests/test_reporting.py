@@ -42,3 +42,13 @@ def test_nonfinite_numbers_rejected():
         report_csv(bad)
     with pytest.raises(ValueError):
         report_json(bad)
+
+
+def test_csv_spreadsheet_formula_injection_is_escaped():
+    report = {**REPORT, "metadata": {"source": "=HYPERLINK(\"https://example.invalid\")"},
+              "historical": {"=dangerous": "+SUM(1,1)"}}
+    exported = report_csv(report)
+    rows = list(csv.reader(io.StringIO(exported)))
+    assert any(row[0].startswith("\\t") and "dangerous" in row[0] for row in rows)
+    assert any(row[2].startswith("\\t") and "SUM" in row[2] for row in rows)
+    assert any(row[2].startswith("\\t") and "HYPERLINK" in row[2] for row in rows)
