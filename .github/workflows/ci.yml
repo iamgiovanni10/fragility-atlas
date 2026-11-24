@@ -37,3 +37,26 @@ jobs:
         run: python -m py_compile dashboard.py pages/1_Research_Lab.py
       - name: Import research modules
         run: python -c "import fragility_atlas.historical, fragility_atlas.portfolio, fragility_atlas.stress, fragility_atlas.validation, fragility_atlas.sensitivity"
+      - name: Start Streamlit and verify HTTP health
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m streamlit run dashboard.py --server.headless true --server.port 8765 --browser.gatherUsageStats false > /tmp/fragility-streamlit.log 2>&1 &
+          streamlit_pid=$!
+          trap 'kill "$streamlit_pid" 2>/dev/null || true' EXIT
+          healthy=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8765/_stcore/health > /tmp/fragility-health.txt 2>/dev/null; then
+              healthy=1
+              break
+            fi
+            if ! kill -0 "$streamlit_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if [ "$healthy" -ne 1 ]; then
+            cat /tmp/fragility-streamlit.log
+            exit 1
+          fi
+          grep -q ok /tmp/fragility-health.txt
