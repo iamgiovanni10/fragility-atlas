@@ -47,7 +47,10 @@ def rolling_historical_var(returns, window=250, confidence=0.99, portfolio_value
         historical_var_es(r[t - window:t], confidence, portfolio_value)["var"]
         for t in range(window, len(r))
     ]
-    losses = (-r[window:] * portfolio_value).tolist()
+    losses_array = -r[window:] * portfolio_value
+    if not np.all(np.isfinite(losses_array)):
+        raise ValueError("numeric overflow in realized backtest losses")
+    losses = losses_array.tolist()
     return {"forecast_vars": forecasts, "realized_losses": losses,
             "window": window, "confidence": float(confidence),
             "coverage": var_coverage(losses, forecasts, alpha=1-confidence)}
