@@ -58,3 +58,9 @@ Status: **IN DEVELOPMENT — NOT RELEASED**. This document is a scope and accept
 - Generated PDFs are now parsed with pypdf in tests, and CSV Unicode/quoting round-trip is covered. Browser-level downloads and a staging deployment have **not** been independently verified.
 - SHA-256 input fingerprints are tested for byte-level provenance; they do not prove data authenticity.
 - Release blockers remain: staged end-to-end user journey, responsive and keyboard checks, public deployment smoke test, final release version/tag and review of the exact merge commit.
+
+## Release candidate checkpoint (2026-11-24)
+
+The functional scope is frozen pending final acceptance. CI [45503604131](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45503604131) and Chromium [45503604136](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45503604136) passed at commit `ba013f1`, including the redesigned report download and backtest visualization. This supersedes the earlier absence of browser-level evidence, but does not establish cloud deployment acceptance.
+
+Subsequent drawdown, report identity, documentation and regression-test changes require fresh CI on the final candidate. Cloud acceptance remains open: verify the actual deployed report format, responsive layout, keyboard navigation, uploads and downloads. Retain the prerelease version until these checks pass. No independent scientific validation is claimed.
