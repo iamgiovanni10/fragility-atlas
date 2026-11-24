@@ -16,6 +16,6 @@ jobs:
       - name: Unit tests
         run: python -m pytest -q
       - name: Compile dashboard
-        run: python -m py_compile dashboard.py
+        run: python -m py_compile dashboard.py pages/1_Research_Lab.py
       - name: Import research modules
         run: python -c "import fragility_atlas.historical, fragility_atlas.portfolio, fragility_atlas.stress, fragility_atlas.validation, fragility_atlas.sensitivity"
