@@ -11,11 +11,11 @@ import pandas as pd
 import streamlit as st
 
 from fragility_atlas import Model
-from fragility_atlas.workbench import hedge_diagnostics, scenario_pnl
+from fragility_atlas.workbench import hedge_diagnostics, scenario_pnl, scenario_comparison
 
 st.set_page_config(page_title="Fragility Atlas", page_icon="📊", layout="wide")
 st.title("Fragility Atlas")
-st.caption("Risk Workbench v0.2 · Explainable reverse stress testing · Synthetic data")
+st.caption("Scenario Intelligence v0.3 · Explainable reverse stress testing · Synthetic data")
 st.warning("Experimental model. Synthetic inputs and illustrative hedge costs. Not validated for trading or investment decisions.")
 
 DEMO = Path(__file__).resolve().parent / "examples" / "demo.json"
@@ -73,13 +73,35 @@ with tabs[1]:
     for name in model.names:
         shock_inputs.append(st.number_input(f"{name} shock (%)", value=0.0, step=0.25, format="%.3f") / 100)
     manual_pnl = scenario_pnl(model.exposure, shock_inputs)
-    st.metric("Hypothetical scenario P&L", f"${manual_pnl:,.0f}")
+    st.metric("Hypothetical scenario P&L (unhedged)", f"${manual_pnl:,.0f}")
+    comparison = scenario_comparison(model.exposure, model.covariance, shock_inputs, radius)
+    st.metric("Scenario Mahalanobis distance", f"{comparison['mahalanobis_distance']:.3f}")
+    if comparison["inside_uncertainty_set"]:
+        st.success("Scenario is inside the selected covariance ellipsoid (geometric classification only).")
+    else:
+        st.warning("Scenario is OUTSIDE the selected covariance ellipsoid. The hedge worst-loss cap does not apply to this shock.")
+    if run_hedge:
+        try:
+            hedges = raw["hedges"]
+            scenario_hedge = model.hedge(loss, hedges["factor_sensitivities"], hedges["cost_per_unit"], hedges["names"], radius)
+            ordered_units = [scenario_hedge["units"][name] for name in hedges["names"]]
+            comparison = scenario_comparison(
+                model.exposure, model.covariance, shock_inputs, radius,
+                hedges["factor_sensitivities"], ordered_units
+            )
+            a, b = st.columns(2)
+            a.metric("Same-scenario P&L before hedge", f"${comparison['before_pnl']:,.0f}")
+            b.metric("Same-scenario P&L after hedge", f"${comparison['after_pnl']:,.0f}",
+                     delta=f"${comparison['pnl_change']:,.0f} change")
+            st.caption("This compares identical shocks, using synthetic linear exposures. It does not include hedge costs in scenario P&L.")
+        except (ValueError, RuntimeError, KeyError, TypeError, np.linalg.LinAlgError) as exc:
+            st.error(f"Scenario hedge comparison unavailable: {exc}")
     st.dataframe(pd.DataFrame({
         "Factor": model.names,
         "Shock (%)": np.asarray(shock_inputs) * 100,
         "P&L (USD)": model.exposure * np.asarray(shock_inputs),
     }), hide_index=True, use_container_width=True)
-    report["manual_scenario"] = {"shocks": dict(zip(model.names, shock_inputs)), "pnl": manual_pnl}
+    report["manual_scenario"] = {"shocks": dict(zip(model.names, shock_inputs)), "pnl": manual_pnl, "comparison": comparison}
 
 with tabs[2]:
     st.subheader("Hedge Analysis")
@@ -96,7 +118,7 @@ with tabs[2]:
             a.metric("Illustrative hedge cost", f"${hedge['estimated_cost']:,.0f}")
             b.metric("Worst loss before hedge", f"${diagnostics['before_worst_loss']:,.0f}")
             c.metric("Worst loss after hedge", f"${diagnostics['after_worst_loss']:,.0f}")
-            st.bar_chart(pd.DataFrame({"Before": [diagnostics["before_worst_loss"]], "After": [diagnostics["after_worst_loss"]]}, index=["Worst-case loss"]).T)
+            st.bar_chart(pd.DataFrame({"Worst-case loss (USD)": [diagnostics["before_worst_loss"], diagnostics["after_worst_loss"]]}, index=["Before hedge", "After hedge"]))
             st.dataframe(pd.DataFrame({
                 "Hedge": list(hedge["units"].keys()),
                 "Units": [0.0 if abs(v) < 1e-8 else round(v, 4) for v in hedge["units"].values()],
@@ -120,4 +142,4 @@ with tabs[3]:
                        file_name="fragility_atlas_report.json", mime="application/json")
     st.caption("Diagnostics check arithmetic and constraints, not empirical model accuracy.")
 
-st.caption("Research workbench v0.2 · Synthetic inputs · No calibrated probabilities or live prices")
+st.caption("Scenario Intelligence v0.3 · Synthetic inputs · No calibrated probabilities or live prices")
