@@ -1,3 +1,7 @@
+## Scenario Intelligence v0.3 (experimental)
+
+The Scenario Explorer now evaluates a **single identical shock vector** against unhedged and hedged factor exposures, displaying both P&Ls and the difference. It also calculates the shock's Mahalanobis distance and checks whether the shock is within the covariance ellipsoid selected by the user. An outside-ellipsoid scenario is **not** subject to the optimized hedge's worst-loss bound. Scenario P&L excludes hedge acquisition costs. All inputs and hedges remain synthetic, and ellipsoid membership does not imply a calibrated probability.
+
 # Fragility Atlas
 
 **Explainable Reverse Stress Testing & Portfolio Fragility Analysis**
