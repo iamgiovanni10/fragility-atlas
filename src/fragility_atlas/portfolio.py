@@ -49,6 +49,8 @@ def read_portfolio_csv(content, max_rows=10000, max_bytes=2_000_000):
     required = ("position_id", "quantity", "price_usd")
     if not columns or len(columns) != len(set(columns)) or not all(k in columns for k in required):
         raise ValueError("CSV requires unique headers and position_id,quantity,price_usd")
+    if len(columns) > 53:
+        raise ValueError("CSV supports at most 50 factor columns")
     factors = tuple(k for k in columns if k not in required)
     if not factors or any(not k.strip() for k in columns):
         raise ValueError("at least one named factor column is required")
@@ -69,9 +71,17 @@ def read_portfolio_csv(content, max_rows=10000, max_bytes=2_000_000):
             raise ValueError("invalid numeric value") from exc
         if not all(math.isfinite(v) for v in [qty, price, *factor_values]) or price < 0:
             raise ValueError("nonfinite values or negative price")
+        market_value = qty * price
+        row_exposure = [qty * v for v in factor_values]
+        if not all(math.isfinite(v) for v in [market_value, *row_exposure]):
+            raise ValueError("numeric overflow in position valuation or exposure")
         ids.append(pid)
-        values.append(qty * price)
-        exposures.append([qty * v for v in factor_values])
+        values.append(market_value)
+        exposures.append(row_exposure)
     if not ids:
         raise ValueError("CSV contains no positions")
-    return Portfolio(factors, tuple(ids), np.asarray(values), np.asarray(exposures))
+    values_array = np.asarray(values)
+    exposures_array = np.asarray(exposures)
+    if not math.isfinite(float(np.sum(values_array))) or not np.all(np.isfinite(np.sum(exposures_array, axis=0))):
+        raise ValueError("numeric overflow in aggregate portfolio")
+    return Portfolio(factors, tuple(ids), values_array, exposures_array)
