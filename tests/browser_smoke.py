@@ -19,7 +19,7 @@ def main():
         try:
             page.goto(BASE, wait_until="domcontentloaded", timeout=60000)
             expect(page.get_by_role("heading", name="Fragility Atlas", exact=True)).to_be_visible(timeout=60000)
-            expect(page.get_by_text("Scenario Intelligence v0.3", exact=False).first).to_be_visible()
+            expect(page.get_by_text("QUANTITATIVE RISK RESEARCH / SCENARIO INTELLIGENCE", exact=True)).to_be_visible()
 
             # Navigate via the Streamlit multipage sidebar rather than assuming URL routing.
             page.get_by_role("link", name="Research Lab").click(timeout=30000)
@@ -62,6 +62,7 @@ def main():
                     text = "\n".join(p.extract_text() or "" for p in pdf.pages)
                     assert "Fragility Atlas" in text
                     assert "historical.expected_shortfall" in text
+                    assert "Executive summary" in text
             assert not page.locator("[data-testid='stException']").count()
         finally:
             page.screenshot(path="/tmp/fragility-browser-smoke.png", full_page=True)
