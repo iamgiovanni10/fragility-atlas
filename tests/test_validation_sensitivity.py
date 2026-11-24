@@ -48,3 +48,10 @@ def test_bad_grid_rejected():
 def test_rolling_rejects_insufficient_holdout():
     with pytest.raises(ValueError, match="out-of-sample"):
         rolling_historical_var([0.0] * 30, window=20)
+
+
+def test_rolling_rejects_realized_loss_overflow():
+    observations = [0.0] * 40 + [1e308]
+    with pytest.raises(ValueError, match="realized backtest losses"):
+        rolling_historical_var(observations, window=20, confidence=0.95,
+                               portfolio_value=1e308)
