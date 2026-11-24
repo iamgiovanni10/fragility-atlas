@@ -3,7 +3,6 @@ import csv
 import io
 import json
 import math
-from datetime import datetime, timezone
 
 
 def _validate_report(report):
@@ -47,11 +46,8 @@ def report_csv(report):
 def report_pdf(report):
     """PDF bytes, requiring optional reportlab dependency; bounded for safe rendering."""
     _validate_report(report)
-    from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.lib.enums import TA_LEFT
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.utils import simpleSplit
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from xml.sax.saxutils import escape
 
     rows = list(csv.reader(io.StringIO(report_csv(report))))
