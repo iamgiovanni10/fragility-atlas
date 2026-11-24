@@ -110,3 +110,26 @@ def test_downloadable_csv_roundtrips_unicode_and_quoted_fields():
     report = {**REPORT, "metadata": {"source": 'Échantillon, "research"'}}
     rows = list(csv.reader(io.StringIO(report_csv(report))))
     assert ["metadata.source", "value", 'Échantillon, "research"'] in rows
+
+
+def test_pdf_summary_preserves_metrics_and_omits_observation_arrays():
+    from pypdf import PdfReader
+
+    report = {
+        **REPORT,
+        "scenario_comparison": {"Loss scenario": {"pnl": -25.0},
+                                "Gain scenario": {"pnl": 10.0}},
+        "coverage": {"forecast_vars": [20.0] * 2000,
+                     "realized_losses": [10.0] * 2000,
+                     "coverage": {"exceedances": 0}},
+    }
+    reader = PdfReader(io.BytesIO(report_pdf(report)), strict=True)
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "Executive summary" in text
+    assert "Loss scenario" in text
+    assert "Gain scenario" in text
+    assert "4000 observation-level fields omitted" in text
+    assert "coverage.coverage.exceedances" in text
+    assert "coverage.forecast_vars[0]" not in text
+    assert len(reader.pages) < 8
+    assert len(json.loads(report_json(report))["coverage"]["forecast_vars"]) == 2000
