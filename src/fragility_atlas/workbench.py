@@ -8,6 +8,13 @@ import numpy as np
 def ellipsoid_worst_loss(exposure, covariance, radius):
     b = np.asarray(exposure, dtype=float)
     s = np.asarray(covariance, dtype=float)
+    if b.ndim != 1 or b.size == 0 or s.shape != (b.size, b.size):
+        raise ValueError("incompatible exposure/covariance dimensions")
+    if not np.all(np.isfinite(b)) or not np.all(np.isfinite(s)):
+        raise ValueError("exposure and covariance must be finite")
+    if not np.allclose(s, s.T, rtol=1e-10, atol=1e-12):
+        raise ValueError("covariance must be symmetric")
+    np.linalg.cholesky(s)
     if not np.isfinite(radius) or radius <= 0:
         raise ValueError("radius must be positive and finite")
     return float(radius * np.sqrt(max(0.0, b @ s @ b)))
@@ -16,7 +23,7 @@ def ellipsoid_worst_loss(exposure, covariance, radius):
 def scenario_pnl(exposure, shocks):
     b = np.asarray(exposure, dtype=float)
     x = np.asarray(shocks, dtype=float)
-    if b.ndim != 1 or x.shape != b.shape or not np.all(np.isfinite(x)):
+    if b.ndim != 1 or x.shape != b.shape or not np.all(np.isfinite(x)) or not np.all(np.isfinite(b)):
         raise ValueError("invalid scenario shocks")
     return float(b @ x)
 
