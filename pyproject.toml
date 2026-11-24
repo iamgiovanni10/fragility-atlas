@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fragility-atlas"
-version = "0.1.0"
-description = "Explainable reverse stress testing and minimum-cost counterfactual hedging"
+version = "1.0.0rc1"
+description = "Research platform for linear-factor portfolio stress, historical risk and counterfactual hedging"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.10"]
 
