@@ -19,7 +19,7 @@ def _returns(values):
 def historical_var_es(returns, confidence=0.99, portfolio_value=1.0):
     """Empirical loss quantile and ES, with fractional mass at the VaR cutoff.
 
-    VaR is the upper-tail loss quantile using NumPy's 'higher' order statistic.
+    VaR is the upper-tail loss quantile using the empirical inverse-CDF order statistic (ceil(n*c)-1).
     ES is the average loss over exactly (1-confidence) probability mass,
     including fractional weight on the cutoff observation. Losses may be negative.
     """
@@ -42,7 +42,7 @@ def historical_var_es(returns, confidence=0.99, portfolio_value=1.0):
     return {"confidence": float(confidence), "observations": n,
             "var": var, "expected_shortfall": float(es),
             "portfolio_value": float(portfolio_value),
-            "convention": "empirical higher-order-statistic VaR; fractional-tail ES"}
+            "convention": "empirical inverse-CDF VaR (ceil(n*c)-1); fractional-tail ES"}
 
 
 def drawdown_statistics(returns):
