@@ -3,7 +3,7 @@
 All example observations are synthetic. Uploaded data is processed in session only.
 """
 import io
-import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +12,7 @@ import streamlit as st
 
 from fragility_atlas.core import Model
 from fragility_atlas.portfolio import read_portfolio_csv
-from fragility_atlas.stress import evaluate_scenarios, replay_factor_history
+from fragility_atlas.stress import evaluate_scenarios
 from fragility_atlas.historical import historical_summary
 from fragility_atlas.validation import rolling_historical_var
 from fragility_atlas.sensitivity import reverse_stress_sensitivity
@@ -88,7 +88,7 @@ try:
     c2.metric("Expected shortfall", f"${summary['expected_shortfall']:,.0f}")
     c3.metric("Maximum drawdown", f"{summary['maximum_drawdown']:.2%}")
     st.line_chart(pd.DataFrame({"Compounded wealth": np.r_[1.0, np.cumprod(1 + returns)]}))
-    if len(returns) >= 41:
+    if len(returns) >= 40:
         window = st.number_input("Backtest lookback observations", min_value=20,
                                  max_value=len(returns)-20, value=min(250, len(returns)-20))
         backtest = rolling_historical_var(returns, int(window), confidence, value)
@@ -99,7 +99,7 @@ try:
                    "Very few expected breaches make the chi-square approximation unreliable.")
     else:
         backtest = None
-        st.info("At least 41 observations are needed for the rolling backtest here.")
+        st.info("At least 40 observations are needed for the rolling backtest here.")
 except (ValueError, TypeError) as exc:
     st.error(f"Historical risk calculation unavailable: {exc}")
     st.stop()
@@ -123,7 +123,11 @@ except (ValueError, np.linalg.LinAlgError) as exc:
     st.error(f"Sensitivity calculation unavailable: {exc}")
     sensitivity = []
 
-report = {"metadata": {"app": "Fragility Atlas Research Lab", "source": source,
+report = {"metadata": {"app": "Fragility Atlas Research Lab",
+                       "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                       "risk_conventions": "one-period empirical VaR (higher order statistic), fractional-tail ES; daily simple returns",
+                       "factor_covariance": "illustrative independent factors with user-assumed identical volatility",
+                       "source": source,
                        "portfolio_source": "synthetic example" if uploaded is None else "user-supplied CSV",
                        "limitations": "linear factors; no live data; no verified market calibration"},
           "portfolio": {"factor_names": portfolio.factors, "value": portfolio.value,
