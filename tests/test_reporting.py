@@ -49,6 +49,6 @@ def test_csv_spreadsheet_formula_injection_is_escaped():
               "historical": {"=dangerous": "+SUM(1,1)"}}
     exported = report_csv(report)
     rows = list(csv.reader(io.StringIO(exported)))
-    assert any(row[0].startswith("\\t") and "dangerous" in row[0] for row in rows)
-    assert any(row[2].startswith("\\t") and "SUM" in row[2] for row in rows)
-    assert any(row[2].startswith("\\t") and "HYPERLINK" in row[2] for row in rows)
+    assert any(row[0].startswith(chr(9)) and "dangerous" in row[0] for row in rows)
+    assert any(row[2].startswith(chr(9)) and "SUM" in row[2] for row in rows)
+    assert any(row[2].startswith(chr(9)) and "HYPERLINK" in row[2] for row in rows)
