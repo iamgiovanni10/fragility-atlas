@@ -118,6 +118,29 @@ def report_pdf(report):
         for name, result in comparisons.items():
             scenario_rows.append([para(name), para(f"{result['pnl']:,.2f}")])
         story.append(table(scenario_rows, [305, 200]))
+        # Diverging P&L bars share a zero baseline and a common dollar scale.
+        from reportlab.graphics.shapes import Drawing, Rect, Line, String
+        items = list(comparisons.items())[:12]
+        scale = max((abs(float(result["pnl"])) for _, result in items), default=0.0) or 1.0
+        height = 36 + 24 * len(items)
+        chart = Drawing(490, height)
+        zero = 320
+        chart.add(Line(zero, 20, zero, height - 10, strokeColor=navy))
+        for index, (name, result) in enumerate(items):
+            y = height - 24 - index * 24
+            pnl = float(result["pnl"])
+            width = abs(pnl) / scale * 150
+            chart.add(String(0, y + 3, str(name)[:32], fontSize=8, fillColor=navy))
+            chart.add(Rect(zero - width if pnl < 0 else zero, y, width, 12,
+                           fillColor=colors.HexColor("#B54747" if pnl < 0 else "#287D68"),
+                           strokeColor=None))
+        chart.add(String(zero, 5, "0 USD", fontSize=8, textAnchor="middle", fillColor=navy))
+        story.append(Spacer(1, 8))
+        story.append(chart)
+        story.append(para("Common scale: maximum absolute displayed P&L "
+                          f"{scale:,.2f} USD. Red = loss; green = gain. "
+                          "Chart shows up to 12 scenarios; table contains all scenarios."))
+
     story.append(Paragraph("Research details and provenance", styles["Heading2"]))
     story.append(para(f"{len(rows)-1-len(selected)} observation-level fields omitted from this "
                       "summary PDF. Complete series are available in JSON and CSV."))
