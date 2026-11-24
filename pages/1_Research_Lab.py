@@ -54,8 +54,12 @@ shock = {
                           step=0.25, format="%.2f", key=f"lab_{name}") / 100
     for name in portfolio.factors
 }
-stress = evaluate_scenarios(portfolio.exposure, portfolio.factors, {"custom": shock})["custom"]
-position_attribution = portfolio.scenario([shock[name] for name in portfolio.factors])
+try:
+    stress = evaluate_scenarios(portfolio.exposure, portfolio.factors, {"custom": shock})["custom"]
+    position_attribution = portfolio.scenario([shock[name] for name in portfolio.factors])
+except (ValueError, OverflowError) as exc:
+    st.error(f"Scenario calculation rejected: {exc}")
+    st.stop()
 if not np.isclose(stress["pnl"], position_attribution["total_pnl"], rtol=1e-10, atol=1e-6):
     st.error("Factor and position attribution do not reconcile.")
     st.stop()
@@ -81,7 +85,11 @@ for scenario_name, preset in preset_definitions.items():
     comparison_inputs[scenario_name] = {
         factor: preset.get(factor, 0.0) for factor in portfolio.factors
     }
-comparisons = evaluate_scenarios(portfolio.exposure, portfolio.factors, comparison_inputs)
+try:
+    comparisons = evaluate_scenarios(portfolio.exposure, portfolio.factors, comparison_inputs)
+except (ValueError, OverflowError) as exc:
+    st.error(f"Scenario comparison rejected: {exc}")
+    st.stop()
 comparison_rows = [
     {"scenario": scenario_name, "pnl_usd": result["pnl"],
      "pnl_pct_of_abs_net_value": (
