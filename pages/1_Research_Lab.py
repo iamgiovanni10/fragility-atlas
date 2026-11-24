@@ -66,6 +66,32 @@ st.dataframe(pd.DataFrame({"position": list(position_attribution["position_pnl"]
                            "P&L (USD)": list(position_attribution["position_pnl"].values())}),
              hide_index=True, use_container_width=True)
 
+st.subheader("Scenario comparison")
+st.caption("Illustrative hypothetical shocks, not reconstructions of named historical crises.")
+preset_definitions = {
+    "Broad risk-off (illustrative)": {"equities": -0.15, "rates": -0.01, "credit_spreads": 0.02},
+    "Rates up (illustrative)": {"equities": -0.04, "rates": 0.02, "credit_spreads": 0.005},
+    "Credit widening (illustrative)": {"equities": -0.07, "rates": 0.0, "credit_spreads": 0.03},
+}
+comparison_inputs = {"Custom": shock}
+for scenario_name, preset in preset_definitions.items():
+    comparison_inputs[scenario_name] = {
+        factor: preset.get(factor, 0.0) for factor in portfolio.factors
+    }
+comparisons = evaluate_scenarios(portfolio.exposure, portfolio.factors, comparison_inputs)
+comparison_rows = [
+    {"scenario": scenario_name, "pnl_usd": result["pnl"],
+     "pnl_pct_of_abs_net_value": (
+         100 * result["pnl"] / abs(portfolio.value)
+         if abs(portfolio.value) > 1e-12 else None
+     )}
+    for scenario_name, result in comparisons.items()
+]
+st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
+st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"])
+st.caption("Unrecognized factors receive zero shock in the illustrative presets. "
+           "Percentage P&L uses absolute net marked value; it is omitted when net value is zero.")
+
 st.subheader("Historical risk and VaR coverage")
 st.caption("Upload one chronological daily simple-return column in decimal units, e.g. -0.02 for -2%.")
 returns_file = st.file_uploader("Upload historical returns CSV (max 2 MB)", type=["csv"], key="returns")
@@ -143,7 +169,8 @@ report = {"metadata": {"app": "Fragility Atlas Research Lab",
                        "limitations": "linear factors; no live data; no verified market calibration"},
           "portfolio": {"factor_names": portfolio.factors, "value": portfolio.value,
                         "exposure": portfolio.exposure.tolist()},
-          "stress": stress, "position_attribution": position_attribution,
+          "stress": stress, "scenario_comparison": comparisons,
+          "position_attribution": position_attribution,
           "historical": summary, "coverage": backtest,
           "sensitivity": sensitivity}
 st.subheader("Export reproducible report")
