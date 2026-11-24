@@ -1,0 +1,28 @@
+# Research Lab — v1.0 development preview
+
+Run from repository root:
+
+```bash
+python -m pip install -e '.[dashboard,dev]'
+streamlit run dashboard.py
+```
+
+Use the **Research Lab** page in Streamlit navigation. The original v0.3 dashboard remains available.
+
+## Data contracts
+
+**Portfolio CSV**: `position_id,quantity,price_usd` plus one or more factor sensitivity columns. Factor sensitivity is USD P&L per unit held for a decimal factor shock of 1.0. The bundled sample is synthetic. File size limit is 2 MB and row count limit is 10,000.
+
+**Historical returns CSV**: exactly one column with a header and chronological simple daily returns in decimals, such as `-0.02` for -2%. The default synthetic sample uses a fixed random seed. Uploaded returns are not checked against an external data source.
+
+**Risk metrics**: empirical VaR and fractional-tail expected shortfall are single-period dollar losses, not annualized. Drawdown uses compounded wealth. Backtesting uses only preceding returns; Kupiec's test does not establish model validity.
+
+**Sensitivity**: a diagonal covariance matrix with an explicitly selected volatility is an illustrative assumption, **not** estimated from uploaded portfolio or return data.
+
+## Important limitations
+
+- The portfolio's marked value and the historical risk notional are separate inputs. The return series is not automatically reconciled to imported holdings.
+- No claim of live prices, empirical portfolio calibration, executable hedge instruments, or production-grade risk estimates.
+- The historical risk engine currently accepts aggregate return series, not multi-asset price history.
+- Uploaded CSVs are processed by the Streamlit server in the active session; do not upload confidential information to an untrusted deployment.
+- The Research Lab is a **development preview**, not evidence that the v1.0 release criteria are complete.
