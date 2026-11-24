@@ -84,3 +84,29 @@ def test_pdf_rejects_oversized_report():
     report = {**REPORT, "metadata": {"many": list(range(1501))}}
     with pytest.raises(ValueError, match="too large"):
         report_pdf(report)
+
+
+def test_downloadable_pdf_is_parseable_and_contains_research_fields():
+    from pypdf import PdfReader
+
+    payload = report_pdf({
+        **REPORT,
+        "metadata": {
+            "source": "fixture",
+            "portfolio_input_sha256": "a" * 64,
+            "generated_at_utc": "2026-11-24T18:00:00+00:00",
+        },
+    })
+    reader = PdfReader(io.BytesIO(payload), strict=True)
+    assert len(reader.pages) >= 1
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    assert "Fragility Atlas" in text
+    assert "metadata.portfolio_input_sha256" in text
+    assert "historical.expected_shortfall" in text
+    assert "2026-11-24T18:00:00+00:00" in text
+
+
+def test_downloadable_csv_roundtrips_unicode_and_quoted_fields():
+    report = {**REPORT, "metadata": {"source": 'Échantillon, "research"'}}
+    rows = list(csv.reader(io.StringIO(report_csv(report))))
+    assert ["metadata.source", "value", 'Échantillon, "research"'] in rows
