@@ -1,5 +1,4 @@
 """End-to-end numerical consistency checks across research modules."""
-import numpy as np
 import pytest
 
 from fragility_atlas.portfolio import read_portfolio_csv
