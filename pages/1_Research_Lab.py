@@ -52,9 +52,18 @@ shock = {
     for name in portfolio.factors
 }
 stress = evaluate_scenarios(portfolio.exposure, portfolio.factors, {"custom": shock})["custom"]
+position_attribution = portfolio.scenario([shock[name] for name in portfolio.factors])
+if not np.isclose(stress["pnl"], position_attribution["total_pnl"], rtol=1e-10, atol=1e-6):
+    st.error("Factor and position attribution do not reconcile.")
+    st.stop()
 st.metric("Linear scenario P&L (USD)", f"${stress['pnl']:,.2f}")
 st.dataframe(pd.DataFrame({"factor": list(stress["factor_pnl"]),
                            "P&L (USD)": list(stress["factor_pnl"].values())}),
+             hide_index=True, use_container_width=True)
+
+st.caption("Position-level P&L attribution (same scenario)")
+st.dataframe(pd.DataFrame({"position": list(position_attribution["position_pnl"]),
+                           "P&L (USD)": list(position_attribution["position_pnl"].values())}),
              hide_index=True, use_container_width=True)
 
 st.subheader("Historical risk and VaR coverage")
@@ -134,7 +143,8 @@ report = {"metadata": {"app": "Fragility Atlas Research Lab",
                        "limitations": "linear factors; no live data; no verified market calibration"},
           "portfolio": {"factor_names": portfolio.factors, "value": portfolio.value,
                         "exposure": portfolio.exposure.tolist()},
-          "stress": stress, "historical": summary, "coverage": backtest,
+          "stress": stress, "position_attribution": position_attribution,
+          "historical": summary, "coverage": backtest,
           "sensitivity": sensitivity}
 st.subheader("Export reproducible report")
 st.caption("Exports include source labels, numerical results, and model limitations.")
