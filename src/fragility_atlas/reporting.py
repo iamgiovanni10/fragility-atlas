@@ -26,8 +26,8 @@ def report_csv(report):
     writer.writerow(["section", "metric", "value"])
     def safe_csv(value):
         # Prevent spreadsheet software from interpreting untrusted text as a formula.
-        if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@", "\\t", "\\r")):
-            return "\\t" + value
+        if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@", chr(9), chr(13))):
+            return chr(9) + value
         return value
 
     def walk(section, value):
