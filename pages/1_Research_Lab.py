@@ -73,9 +73,11 @@ else:
         df = pd.read_csv(io.BytesIO(returns_file.getvalue()))
         if df.shape[1] != 1:
             raise ValueError("CSV must contain exactly one return column")
+        if len(df) > 10000:
+            raise ValueError("Returns CSV exceeds 10,000 observations")
         returns = pd.to_numeric(df.iloc[:, 0], errors="raise").to_numpy(dtype=float)
         source = "User-supplied CSV (unverified)"
-    except (ValueError, pd.errors.ParserError, UnicodeDecodeError) as exc:
+    except (ValueError, pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as exc:
         st.error(f"Returns CSV rejected: {exc}")
         st.stop()
 st.caption(f"Source: {source}")
