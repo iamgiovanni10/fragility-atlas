@@ -16,6 +16,7 @@ from fragility_atlas.stress import evaluate_scenarios, replay_factor_history
 from fragility_atlas.historical import historical_summary
 from fragility_atlas.validation import rolling_historical_var
 from fragility_atlas.sensitivity import reverse_stress_sensitivity
+from fragility_atlas.reporting import report_json, report_csv, report_pdf
 
 st.set_page_config(page_title="Research Lab | Fragility Atlas", layout="wide")
 st.title("Research Lab")
@@ -129,6 +130,16 @@ report = {"metadata": {"app": "Fragility Atlas Research Lab", "source": source,
                         "exposure": portfolio.exposure.tolist()},
           "stress": stress, "historical": summary, "coverage": backtest,
           "sensitivity": sensitivity}
-st.download_button("Export research lab report (JSON)", json.dumps(report, indent=2),
+st.subheader("Export reproducible report")
+st.caption("Exports include source labels, numerical results, and model limitations.")
+st.download_button("Download JSON", report_json(report),
                    file_name="fragility_atlas_research_lab.json", mime="application/json")
+st.download_button("Download CSV", report_csv(report),
+                   file_name="fragility_atlas_research_lab.csv", mime="text/csv")
+try:
+    pdf_bytes = report_pdf(report)
+    st.download_button("Download PDF", pdf_bytes,
+                       file_name="fragility_atlas_research_lab.pdf", mime="application/pdf")
+except (ValueError, ImportError) as exc:
+    st.warning(f"PDF report unavailable: {exc}")
 st.caption("Research prototype. Diagnostics and historical summaries are not investment recommendations.")
