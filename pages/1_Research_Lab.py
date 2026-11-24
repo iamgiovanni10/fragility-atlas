@@ -45,7 +45,11 @@ except (ValueError, UnicodeDecodeError) as exc:
     st.error(f"Portfolio input rejected: {exc}")
     st.stop()
 
-st.metric("Net marked portfolio value (USD)", f"${portfolio.value:,.2f}")
+st.subheader("Portfolio overview")
+st.caption("Marked value and linear factor sensitivities from the selected portfolio.")
+a, b = st.columns(2)
+a.metric("Net marked portfolio value (USD)", f"${portfolio.value:,.2f}")
+b.metric("Risk factors", len(portfolio.factors))
 st.dataframe(pd.DataFrame({"factor": portfolio.factors, "USD sensitivity": portfolio.exposure}),
              hide_index=True, use_container_width=True)
 
@@ -105,8 +109,11 @@ for scenario_name, result in comparisons.items():
         "pnl_usd": result["pnl"],
         "pnl_pct_of_abs_net_value": pct,
     })
-st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
-st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"])
+left, right = st.columns([3, 2])
+with left:
+    st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"], horizontal=True)
+with right:
+    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
 st.caption("Unrecognized factors receive zero shock in the illustrative presets. "
            "Percentage P&L uses absolute net marked value; it is omitted when net value is near zero or the ratio is not finite.")
 
@@ -164,7 +171,8 @@ confidence = st.selectbox("VaR confidence", [0.95, 0.975, 0.99], index=2)
 value = st.number_input("Risk notional (USD)", min_value=1.0, value=1_000_000.0)
 try:
     summary = historical_summary(returns, confidence, value)
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
+    c4.metric("Annualized volatility", f"{summary['annualized_volatility']:.2%}")
     c1.metric("Historical VaR", f"${summary['var']:,.0f}")
     c2.metric("Expected shortfall", f"${summary['expected_shortfall']:,.0f}")
     c3.metric("Maximum drawdown", f"{summary['maximum_drawdown']:.2%}")
