@@ -22,6 +22,18 @@ from fragility_atlas.provenance import sha256_input_bytes
 
 st.set_page_config(page_title="Research Lab | Fragility Atlas", layout="wide")
 st.title("Research Lab")
+st.sidebar.markdown("### Research modules")
+for label, target in [
+    ("Portfolio overview", "portfolio-overview"),
+    ("Stress testing", "hypothetical-stress-scenarios"),
+    ("Scenario comparison", "scenario-comparison"),
+    ("Historical replay", "historical-factor-shock-replay"),
+    ("Historical risk & coverage", "historical-risk-and-var-coverage"),
+    ("Reverse stress", "reverse-stress-sensitivity"),
+    ("Report exports", "export-reproducible-report"),
+]:
+    st.sidebar.markdown(f"[{label}](#{target})")
+
 st.caption("Fragility Atlas v1.0 development preview · Linear factors · Research only")
 st.warning("Synthetic demonstration by default. Uploaded data is not independently verified; no investment advice.")
 
