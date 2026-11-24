@@ -3,6 +3,7 @@
 All example observations are synthetic. Uploaded data is processed in session only.
 """
 import io
+from importlib.metadata import version
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,7 +35,9 @@ for label, target in [
 ]:
     st.sidebar.markdown(f"[{label}](#{target})")
 
-st.caption("Fragility Atlas v1.0 development preview · Linear factors · Research only")
+REPORT_FORMAT = "research-summary-v2"
+PACKAGE_VERSION = version("fragility-atlas")
+st.caption(f"Fragility Atlas {PACKAGE_VERSION} · {REPORT_FORMAT} · Linear factors · Research only")
 st.warning("Synthetic demonstration by default. Uploaded data is not independently verified; no investment advice.")
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -255,6 +258,8 @@ except (ValueError, np.linalg.LinAlgError) as exc:
 
 report = {"metadata": {"app": "Fragility Atlas Research Lab",
                        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                       "package_version": PACKAGE_VERSION,
+                       "report_format": REPORT_FORMAT,
                        "risk_conventions": "one-period empirical inverse-CDF VaR, fractional-tail ES; daily simple returns",
                        "portfolio_input_sha256": portfolio_sha256,
                        "returns_input_sha256": returns_sha256,
