@@ -32,13 +32,15 @@ uploaded = st.file_uploader("Upload portfolio CSV (max 2 MB)", type=["csv"])
 try:
     if uploaded is None:
         csv_text = SAMPLE
+        portfolio_bytes = SAMPLE.encode("utf-8")
     else:
         if uploaded.size > 2_000_000:
             st.error("Portfolio CSV exceeds the 2 MB limit.")
             st.stop()
-        csv_text = uploaded.getvalue().decode("utf-8-sig")
+        portfolio_bytes = uploaded.getvalue()
+        csv_text = portfolio_bytes.decode("utf-8-sig")
     portfolio = read_portfolio_csv(csv_text)
-    portfolio_sha256 = hashlib.sha256(csv_text.encode("utf-8")).hexdigest()
+    portfolio_sha256 = hashlib.sha256(portfolio_bytes).hexdigest()
 except (ValueError, UnicodeDecodeError) as exc:
     st.error(f"Portfolio input rejected: {exc}")
     st.stop()
