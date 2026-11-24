@@ -31,8 +31,16 @@ class Portfolio:
             raise ValueError("invalid factor shock vector")
         position_pnl = self.sensitivities @ x
         factor_pnl = self.exposure * x
+        if not np.all(np.isfinite(position_pnl)) or not np.all(np.isfinite(factor_pnl)):
+            raise ValueError("numeric overflow in scenario attribution")
+        total_pnl = float(np.sum(position_pnl))
+        factor_total = float(np.sum(factor_pnl))
+        if not math.isfinite(total_pnl) or not math.isfinite(factor_total):
+            raise ValueError("numeric overflow in scenario aggregation")
+        if not math.isclose(total_pnl, factor_total, rel_tol=1e-9, abs_tol=1e-6):
+            raise ValueError("position and factor attribution do not reconcile")
         return {
-            "total_pnl": float(np.sum(position_pnl)),
+            "total_pnl": total_pnl,
             "position_pnl": dict(zip(self.position_ids, map(float, position_pnl))),
             "factor_pnl": dict(zip(self.factors, map(float, factor_pnl))),
         }
@@ -55,13 +63,14 @@ def read_portfolio_csv(content, max_rows=10000, max_bytes=2_000_000):
     if not factors or any(not k.strip() for k in columns):
         raise ValueError("at least one named factor column is required")
     ids, values, exposures = [], [], []
+    seen_ids = set()
     for row in reader:
         if len(ids) >= max_rows:
             raise ValueError("CSV row limit exceeded")
         if None in row or any(v is None for v in row.values()):
             raise ValueError("malformed CSV row")
         pid = row["position_id"].strip()
-        if not pid or pid in ids:
+        if not pid or pid in seen_ids:
             raise ValueError("position IDs must be nonempty and unique")
         try:
             qty = float(row["quantity"])
@@ -75,6 +84,7 @@ def read_portfolio_csv(content, max_rows=10000, max_bytes=2_000_000):
         row_exposure = [qty * v for v in factor_values]
         if not all(math.isfinite(v) for v in [market_value, *row_exposure]):
             raise ValueError("numeric overflow in position valuation or exposure")
+        seen_ids.add(pid)
         ids.append(pid)
         values.append(market_value)
         exposures.append(row_exposure)
