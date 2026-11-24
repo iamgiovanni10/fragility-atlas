@@ -48,3 +48,12 @@ def test_research_lab_backtest_visualization():
     exceedances = next(t for t in tables if "VaR forecast (USD)" in t.columns)
     assert len(exceedances) == 4
     assert (exceedances["Realized loss (USD)"] > exceedances["VaR forecast (USD)"]).all()
+
+
+def test_research_lab_drawdown_and_report_identity():
+    app = AppTest.from_file(str(ROOT / "pages" / "1_Research_Lab.py"), default_timeout=60).run()
+    assert not app.exception, [str(x.message) for x in app.exception]
+    assert any("Drawdown history" in str(x.value) for x in app.markdown)
+    assert any("Compounded wealth" in str(x.value) for x in app.markdown)
+    assert any("peak observation" in str(x.value) for x in app.caption)
+    assert any("research-summary-v2" in str(x.value) for x in app.caption)
