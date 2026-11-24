@@ -41,8 +41,8 @@ def rolling_historical_var(returns, window=250, confidence=0.99, portfolio_value
     """Forecast each next observation using ONLY the preceding rolling window."""
     from .historical import _returns, historical_var_es
     r = _returns(returns)
-    if not isinstance(window, int) or window < 20 or window >= len(r):
-        raise ValueError("window must be >=20 and smaller than series length")
+    if not isinstance(window, int) or window < 20 or len(r) - window < 20:
+        raise ValueError("window must be >=20 with at least 20 out-of-sample observations")
     forecasts = [
         historical_var_es(r[t - window:t], confidence, portfolio_value)["var"]
         for t in range(window, len(r))
