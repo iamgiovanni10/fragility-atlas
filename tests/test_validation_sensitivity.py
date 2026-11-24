@@ -24,9 +24,9 @@ def test_coverage_strict_exceedance():
 
 
 def test_rolling_uses_prior_observations_only():
-    r = [0.0] * 25 + [-0.5]
+    r = [0.0] * 40 + [-0.5]
     out = rolling_historical_var(r, window=20, confidence=0.95)
-    assert len(out["forecast_vars"]) == 6
+    assert len(out["forecast_vars"]) == 21
     assert out["forecast_vars"][-1] == pytest.approx(0)
     assert out["realized_losses"][-1] == pytest.approx(0.5)
 
@@ -43,3 +43,8 @@ def test_bad_grid_rejected():
     m = Model.build(["eq"], [100.0], [[0.04]])
     with pytest.raises(ValueError):
         reverse_stress_sensitivity(m, 10, (0,), (1,))
+
+
+def test_rolling_rejects_insufficient_holdout():
+    with pytest.raises(ValueError, match="out-of-sample"):
+        rolling_historical_var([0.0] * 30, window=20)
