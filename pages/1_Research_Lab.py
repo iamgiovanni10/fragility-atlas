@@ -194,6 +194,24 @@ try:
                                  max_value=len(returns)-20, value=min(250, len(returns)-20))
         backtest = rolling_historical_var(returns, int(window), confidence, value)
         cov = backtest["coverage"]
+        st.markdown("#### Out-of-sample VaR backtest")
+        losses = np.asarray(backtest["realized_losses"])
+        forecasts = np.asarray(backtest["forecast_vars"])
+        breaches = losses > forecasts
+        chart_data = pd.DataFrame({
+            "Realized loss (USD)": losses,
+            "VaR forecast (USD)": forecasts,
+        }, index=pd.Index(np.arange(int(window) + 1, len(returns) + 1),
+                          name="Observation"))
+        st.line_chart(chart_data)
+        st.caption("Positive values represent losses. Each forecast uses only preceding observations.")
+        observed = chart_data.loc[breaches].reset_index()
+        if not observed.empty:
+            st.markdown("**VaR exceedances**")
+            st.dataframe(observed, hide_index=True, use_container_width=True)
+        else:
+            st.info("No strict VaR exceedances in this holdout sample.")
+
         st.write(f"VaR breaches: {cov['exceedances']} of {cov['observations']}; "
                  f"Kupiec asymptotic p-value: {cov['p_value_chi2_1df']:.4f}")
         st.caption("The coverage test does not establish predictive accuracy or independence. "
