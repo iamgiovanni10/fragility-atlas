@@ -225,13 +225,13 @@ report = {"metadata": {"app": "Fragility Atlas Research Lab",
 st.subheader("Export reproducible report")
 st.caption("Exports include source labels, numerical results, and model limitations.")
 st.download_button("Download JSON", report_json(report),
-                   file_name="fragility_atlas_research_lab.json", mime="application/json")
+                   file_name="fragility_atlas_research_lab.json", mime="application/json", on_click="ignore")
 st.download_button("Download CSV", report_csv(report),
-                   file_name="fragility_atlas_research_lab.csv", mime="text/csv")
+                   file_name="fragility_atlas_research_lab.csv", mime="text/csv", on_click="ignore")
 try:
     pdf_bytes = report_pdf(report)
     st.download_button("Download PDF", pdf_bytes,
-                       file_name="fragility_atlas_research_lab.pdf", mime="application/pdf")
+                       file_name="fragility_atlas_research_lab.pdf", mime="application/pdf", on_click="ignore")
 except (ValueError, ImportError) as exc:
     st.warning(f"PDF report unavailable: {exc}")
 st.caption("Research prototype. Diagnostics and historical summaries are not investment recommendations.")
