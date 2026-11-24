@@ -188,7 +188,18 @@ try:
     c1.metric("Historical VaR", f"${summary['var']:,.0f}")
     c2.metric("Expected shortfall", f"${summary['expected_shortfall']:,.0f}")
     c3.metric("Maximum drawdown", f"{summary['maximum_drawdown']:.2%}")
-    st.line_chart(pd.DataFrame({"Compounded wealth": np.r_[1.0, np.cumprod(1 + returns)]}))
+    wealth = np.r_[1.0, np.cumprod(1 + returns)]
+    drawdown = wealth / np.maximum.accumulate(wealth) - 1.0
+    left, right = st.columns(2)
+    with left:
+        st.markdown("#### Compounded wealth")
+        st.line_chart(pd.DataFrame({"Wealth multiple": wealth}))
+    with right:
+        st.markdown("#### Drawdown history")
+        st.area_chart(pd.DataFrame({"Drawdown (%)": 100 * drawdown}))
+    st.caption(f"Maximum drawdown: peak observation {summary['peak_index']}, "
+               f"trough observation {summary['trough_index']}. "
+               "Observation 0 is the initial wealth; indices are not calendar dates.")
     if len(returns) >= 40:
         window = st.number_input("Backtest lookback observations", min_value=20,
                                  max_value=len(returns)-20, value=min(250, len(returns)-20))
