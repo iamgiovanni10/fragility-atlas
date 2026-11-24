@@ -60,3 +60,14 @@ def test_excessive_factor_columns_rejected():
     values = ",".join("1" for _ in range(51))
     with pytest.raises(ValueError, match="50 factor"):
         read_portfolio_csv(f"position_id,quantity,price_usd,{factors}\nA,1,1,{values}\n")
+
+
+def test_scenario_overflow_is_rejected():
+    portfolio = read_portfolio_csv("position_id,quantity,price_usd,eq\nA,1,1,1e308\n")
+    with pytest.raises(ValueError, match="overflow"):
+        portfolio.scenario([1e308])
+
+
+def test_duplicate_position_id_rejected():
+    with pytest.raises(ValueError, match="unique"):
+        read_portfolio_csv("position_id,quantity,price_usd,eq\nA,1,1,2\nA,1,1,3\n")
