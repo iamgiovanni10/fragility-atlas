@@ -7,7 +7,7 @@ python -m pip install -e '.[dashboard,dev]'
 streamlit run dashboard.py
 ```
 
-Use the **Research Lab** page in Streamlit navigation. The original v0.3 dashboard remains available.
+Use the **Research Lab** page in Streamlit navigation. The Dashboard provides the reverse-stress and hedging workbench. The Research Lab sidebar provides section shortcuts.
 
 ## Data contracts
 
@@ -34,3 +34,13 @@ The Research Lab evaluates the custom scenario alongside three explicitly **illu
 - The historical risk engine currently accepts aggregate return series, not multi-asset price history.
 - Uploaded CSVs are processed by the Streamlit server in the active session; do not upload confidential information to an untrusted deployment.
 - The Research Lab is a **development preview**, not evidence that the v1.0 release criteria are complete.
+
+## Historical visualizations and exports
+
+Compounded wealth starts at observation zero with wealth 1. Drawdown is wealth divided by its running maximum minus one. Peak and trough indices are observation numbers, not dates. Rolling VaR charts compare realized dollar losses with forecasts computed exclusively from preceding observations. The exceedance table uses a strict realized loss > forecast rule.
+
+JSON and CSV retain the full observation arrays. The PDF uses the research-summary-v2 format: executive summary, scenario table and chart, and detailed provenance, omitting observation-level backtest and replay arrays. The interface and report metadata expose the installed package version and report format; neither identifies the exact deployed Git commit. Input SHA-256 fingerprints establish byte-level identity, not authenticity.
+
+## Staging acceptance
+
+Verify the package version and report format in the Research Lab caption. Change the synthetic equities shock from -5% to -10% with other shocks zero: P&L should change from -26,100 USD to -52,200 USD. Verify navigation, drawdown and VaR charts, and all three downloads. Open the PDF and confirm the executive summary and scenario chart are present. Check desktop and narrow viewport layouts before approving release. Do not confuse local Chromium CI with a verified cloud deployment.
