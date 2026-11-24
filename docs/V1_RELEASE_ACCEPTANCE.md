@@ -43,3 +43,10 @@ Status: **IN DEVELOPMENT — NOT RELEASED**. This document is a scope and accept
 - Hypothetical stress and fixed-exposure historical factor replay: implementation and unit tests committed; real-data provenance and historical validation pending.
 - All other release gates remain open. This is **not** a release readiness statement.
 
+
+## CI and integration evidence (2026-11-24)
+
+- GitHub Actions run 45482696899 completed successfully for Python 3.10 and 3.12, including unit tests and import checks (commit 10fde6aca449fe7322ca94fb210083979b78203b).
+- Later integration tests include Streamlit AppTest and workbench input guardrails; final result of the newer runs must be checked before release.
+- Research Lab now includes JSON, CSV and PDF exports and a UTC generation timestamp; downloaded-file behavior and deployed navigation still require user-journey verification.
+- No independent market calibration or globally certified hedge optimization has been performed.
