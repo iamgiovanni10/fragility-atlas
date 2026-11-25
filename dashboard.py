@@ -6,6 +6,7 @@ Synthetic portfolio data only. Not investment advice.
 import json
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -24,6 +25,16 @@ DEMO = Path(__file__).resolve().parent / "examples" / "demo.json"
 @st.cache_data
 def load_demo():
     return json.loads(DEMO.read_text(encoding="utf-8"))
+
+
+def signed_bar(data, measure, fmt):
+    return alt.Chart(data).mark_bar().encode(
+        x=alt.X(measure, type="quantitative", scale=alt.Scale(zero=True),
+                axis=alt.Axis(format=fmt)),
+        y=alt.Y("Factor:N", sort=None, axis=alt.Axis(labelLimit=220)),
+        color=alt.condition(alt.datum[measure] < 0, alt.value("#B54747"), alt.value("#287D68")),
+        tooltip=["Factor:N", alt.Tooltip(measure, type="quantitative", format=fmt)],
+    ).properties(height=150)
 
 
 raw = load_demo()
@@ -58,7 +69,7 @@ with tabs[0]:
     })
     left, right = st.columns([3, 2])
     with left:
-        st.bar_chart(shocks.set_index("Factor"), horizontal=True)
+        st.altair_chart(signed_bar(shocks, "Shock (%)", ".2f"), use_container_width=True)
     with right:
         st.dataframe(shocks, hide_index=True, use_container_width=True)
 
@@ -69,9 +80,10 @@ with tabs[0]:
     })
     left, right = st.columns([3, 2])
     with left:
-        st.bar_chart(attribution.set_index("Factor"), horizontal=True)
+        st.altair_chart(signed_bar(attribution, "P&L (USD)", ",.0f"), use_container_width=True)
     with right:
-        st.dataframe(attribution, hide_index=True, use_container_width=True)
+        st.dataframe(attribution, hide_index=True, use_container_width=True,
+                     column_config={"P&L (USD)": st.column_config.NumberColumn(format="dollar")})
     st.caption("These are linear scenario contributions, not causal explanations.")
 
 with tabs[1]:
