@@ -40,6 +40,8 @@ def main():
                 ("Download CSV", ".csv"),
                 ("Download PDF", ".pdf"),
             ):
+                expect(page.get_by_role("button", name=label, exact=True)).to_be_enabled(timeout=60000)
+                expect(page.get_by_test_id("stStatusWidget")).to_be_hidden(timeout=60000)
                 with page.expect_download(timeout=60000) as download_info:
                     page.get_by_role("button", name=label, exact=True).click()
                 download = download_info.value
