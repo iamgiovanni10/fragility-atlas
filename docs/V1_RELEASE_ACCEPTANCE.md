@@ -64,3 +64,13 @@ Status: **IN DEVELOPMENT — NOT RELEASED**. This document is a scope and accept
 The functional scope is frozen pending final acceptance. CI [45503604131](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45503604131) and Chromium [45503604136](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45503604136) passed at commit `ba013f1`, including the redesigned report download and backtest visualization. This supersedes the earlier absence of browser-level evidence, but does not establish cloud deployment acceptance.
 
 Subsequent drawdown, report identity, documentation and regression-test changes require fresh CI on the final candidate. Cloud acceptance remains open: verify the actual deployed report format, responsive layout, keyboard navigation, uploads and downloads. Retain the prerelease version until these checks pass. No independent scientific validation is claimed.
+
+## Final automated candidate checkpoint (2026-11-26)
+
+- Exact tested commit: `cb40acc23397470e214c118f79919b62fd4571eb`.
+- [CI 45912642976](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45912642976): success.
+- [Browser acceptance 45912642907](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45912642907): success. The test covers navigation, shock recalculation, actual JSON/CSV/PDF downloads, three viewport sizes and selected keyboard interactions.
+- The candidate includes explicit zero-baseline signed charts and compact PDF tables. Automated PDF parsing is not visual pagination certification.
+- Prior staging user checks confirmed navigation and exports; the updated visual layout and uploaded-data journey still require final staging confirmation. Responsive smoke checks are not comprehensive accessibility certification.
+- An earlier PDF download cancellation was observed; successful subsequent runs do not prove intermittent failures are eliminated.
+- Keep version 1.0.0rc1 and do not merge until final staging acceptance and release authorization. Re-run CI on the exact versioned release commit. Public deployment smoke test follows merge.
