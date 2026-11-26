@@ -69,6 +69,7 @@ def report_pdf(report):
     navy = colors.HexColor("#142B45")
     styles["Title"].textColor = navy
     styles["Heading2"].textColor = navy
+    styles["Heading2"].keepWithNext = True
     styles["BodyText"].fontSize = 9
     styles["BodyText"].leading = 12
 
@@ -83,8 +84,8 @@ def report_pdf(report):
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#EFF3F7")]),
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ]))
         return result
 
@@ -108,7 +109,7 @@ def report_pdf(report):
         if isinstance(value, (int, float)):
             formatted = f"{value:.2%}" if unit == "%" else f"{value:,.2f} USD"
             summary.append([para(label), para(formatted)])
-    story.append(table(summary, [305, 200]))
+    story.append(table(summary, [295, 198]))
     story.append(para("Historical measures use the stated risk notional and return series, "
                       "which may differ from the marked portfolio."))
     comparisons = report.get("scenario_comparison") or {}
@@ -117,7 +118,7 @@ def report_pdf(report):
         scenario_rows = [["Hypothetical scenario", "P&L (USD)"]]
         for name, result in comparisons.items():
             scenario_rows.append([para(name), para(f"{result['pnl']:,.2f}")])
-        story.append(table(scenario_rows, [305, 200]))
+        story.append(table(scenario_rows, [295, 198]))
         # Diverging P&L bars share a zero baseline and a common dollar scale.
         from reportlab.graphics.shapes import Drawing, Rect, Line, String
         items = list(comparisons.items())[:12]
@@ -144,14 +145,24 @@ def report_pdf(report):
     story.append(Paragraph("Research details and provenance", styles["Heading2"]))
     story.append(para(f"{len(rows)-1-len(selected)} observation-level fields omitted from this "
                       "summary PDF. Complete series are available in JSON and CSV."))
+    story.append(para("Numeric detail values may be rounded for display; JSON and CSV retain full precision."))
     groups = {}
     for section, _, value in selected:
         if len(section) > 160 or len(value) > 500:
             raise ValueError("report field too long for PDF export")
-        groups.setdefault(section.split(".")[0].split("[")[0], []).append([para(section), para(value)])
+        display = value
+        # Only round decimal numeric fields, never metadata or textual identifiers.
+        if not section.startswith("metadata.") and ("." in value or "e" in value.lower()):
+            try:
+                number = float(value)
+                if math.isfinite(number):
+                    display = format(number, ".8g")
+            except ValueError:
+                pass
+        groups.setdefault(section.split(".")[0].split("[")[0], []).append([para(section), para(display)])
     for name, entries in groups.items():
         story.append(Paragraph(escape(name.replace("_", " ").title()), styles["Heading2"]))
-        story.append(table([["Field", "Value"]] + entries, [245, 260]))
+        story.append(table([["Field", "Value"]] + entries, [240, 253]))
 
     def footer(canvas, doc):
         canvas.setStrokeColor(colors.HexColor("#CBD5E1"))
