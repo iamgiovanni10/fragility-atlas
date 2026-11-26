@@ -12,6 +12,36 @@ from pypdf import PdfReader
 BASE = os.environ.get("FRAGILITY_BASE_URL", "http://127.0.0.1:8765")
 
 
+def check_responsive(page):
+    """Smoke-test both pages at desktop, tablet and narrow mobile widths."""
+    for width, height in ((1366, 900), (768, 1024), (390, 844)):
+        page.set_viewport_size({"width": width, "height": height})
+        expect(page.get_by_role("heading", name="Research Lab", exact=True)).to_be_visible()
+        shock = page.get_by_role("spinbutton", name="equities shock (%)")
+        shock.scroll_into_view_if_needed()
+        expect(shock).to_be_visible()
+        shock.focus()
+        expect(shock).to_be_focused()
+        shock.press("Tab")
+        expect(shock).not_to_be_focused()
+        expect(page.get_by_role("button", name="Download PDF", exact=True)).to_be_enabled()
+        assert not page.locator("[data-testid='stException']").count()
+        print(f"Research Lab viewport and keyboard smoke: {width}x{height}", flush=True)
+
+    page.goto(BASE, wait_until="domcontentloaded", timeout=60000)
+    for width, height in ((390, 844), (768, 1024), (1366, 900)):
+        page.set_viewport_size({"width": width, "height": height})
+        expect(page.get_by_role("heading", name="Fragility Atlas", exact=True)).to_be_visible(timeout=60000)
+        tab = page.get_by_role("tab", name="Scenario Explorer", exact=True)
+        tab.focus()
+        expect(tab).to_be_focused()
+        tab.press("Enter")
+        expect(tab).to_have_attribute("aria-selected", "true")
+        expect(page.get_by_role("heading", name="Scenario Explorer", exact=True)).to_be_visible()
+        assert not page.locator("[data-testid='stException']").count()
+        print(f"Dashboard viewport and keyboard smoke: {width}x{height}", flush=True)
+
+
 def main():
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
@@ -66,6 +96,7 @@ def main():
                     assert "historical.expected_shortfall" in text
                     assert "Executive summary" in text
             assert not page.locator("[data-testid='stException']").count()
+            check_responsive(page)
         finally:
             page.screenshot(path="/tmp/fragility-browser-smoke.png", full_page=True)
             browser.close()
