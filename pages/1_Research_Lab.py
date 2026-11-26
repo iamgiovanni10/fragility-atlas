@@ -7,6 +7,7 @@ from importlib.metadata import version
 from datetime import datetime, timezone
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -125,10 +126,25 @@ for scenario_name, result in comparisons.items():
         "pnl_pct_of_abs_net_value": pct,
     })
 left, right = st.columns([3, 2])
+comparison_frame = pd.DataFrame(comparison_rows)
 with left:
-    st.bar_chart(pd.DataFrame(comparison_rows).set_index("scenario")["pnl_usd"], horizontal=True)
+    chart = alt.Chart(comparison_frame).mark_bar().encode(
+        x=alt.X("pnl_usd:Q", title="Scenario P&L (USD)", scale=alt.Scale(zero=True),
+                axis=alt.Axis(format=",.0f")),
+        y=alt.Y("scenario:N", title=None, sort=None, axis=alt.Axis(labelLimit=240)),
+        color=alt.condition(alt.datum.pnl_usd < 0, alt.value("#B54747"), alt.value("#287D68")),
+        tooltip=[alt.Tooltip("scenario:N", title="Scenario"),
+                 alt.Tooltip("pnl_usd:Q", title="P&L (USD)", format=",.2f")],
+    ).properties(height=190)
+    st.altair_chart(chart, use_container_width=True)
 with right:
-    st.dataframe(pd.DataFrame(comparison_rows), hide_index=True, use_container_width=True)
+    st.dataframe(comparison_frame, hide_index=True, use_container_width=True,
+                 column_config={
+                     "scenario": "Scenario",
+                     "pnl_usd": st.column_config.NumberColumn("P&L (USD)", format="dollar"),
+                     "pnl_pct_of_abs_net_value": st.column_config.NumberColumn(
+                         "P&L / abs. net value (%)", format="%.2f"),
+                 })
 st.caption("Unrecognized factors receive zero shock in the illustrative presets. "
            "Percentage P&L uses absolute net marked value; it is omitted when net value is near zero or the ratio is not finite.")
 
