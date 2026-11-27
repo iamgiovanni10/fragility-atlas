@@ -100,6 +100,7 @@ def main():
             # Upload the same fixture and verify the exported source and byte fingerprint.
             fixture = Path(__file__).resolve().parents[1] / "examples" / "sample_portfolio.csv"
             page.locator('input[type="file"]').first.set_input_files(str(fixture))
+            expect(page.get_by_text("Portfolio source: user-supplied CSV", exact=True)).to_be_visible(timeout=60000)
             expect(page.get_by_text("$79,000.00", exact=True)).to_be_visible(timeout=60000)
             expect(page.get_by_test_id("stStatusWidget")).to_be_hidden(timeout=60000)
             with page.expect_download(timeout=60000) as uploaded_info:
