@@ -2,7 +2,7 @@
 
 **Quantitative Portfolio Risk & Resilience Research Platform**
 
-> **Release status:** v1.0.0rc1 — release candidate on `release/v1-comprehensive`, **not yet released**. The public deployment may still run the older v0.3 Risk Workbench. Do not interpret a successful CI run as proof of deployed functionality or independent model validation.
+> **Release status:** v1.0.0 source. Check GitHub Releases for publication status and the public app for deployed version. Successful CI does not establish independent model validation.
 
 Fragility Atlas is an open-source, AI-assisted **quantitative-finance research prototype** built around interpretable linear factor exposures. It is not a live market-data platform, a trading system, or investment advice.
 
