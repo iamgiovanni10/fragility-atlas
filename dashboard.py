@@ -162,4 +162,4 @@ with tabs[3]:
                        file_name="fragility_atlas_report.json", mime="application/json")
     st.caption("Diagnostics check arithmetic and constraints, not empirical model accuracy.")
 
-st.caption("Fragility Atlas 1.0 release candidate · Synthetic inputs · No calibrated probabilities or live prices")
+st.caption("Fragility Atlas 1.0.0 · Synthetic inputs · No calibrated probabilities or live prices")
