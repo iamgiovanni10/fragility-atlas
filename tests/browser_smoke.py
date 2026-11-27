@@ -1,4 +1,5 @@
 """Headless browser acceptance: Streamlit navigation, interaction, actual downloads."""
+import hashlib
 import csv
 import io
 import json
@@ -96,6 +97,20 @@ def main():
                     assert "historical.expected_shortfall" in text
                     assert "Executive summary" in text
             assert not page.locator("[data-testid='stException']").count()
+            # Upload the same fixture and verify the exported source and byte fingerprint.
+            fixture = Path(__file__).resolve().parents[1] / "examples" / "sample_portfolio.csv"
+            page.locator('input[type="file"]').first.set_input_files(str(fixture))
+            expect(page.get_by_text("$79,000.00", exact=True)).to_be_visible(timeout=60000)
+            expect(page.get_by_test_id("stStatusWidget")).to_be_hidden(timeout=60000)
+            with page.expect_download(timeout=60000) as uploaded_info:
+                page.get_by_role("button", name="Download JSON", exact=True).click()
+            uploaded_download = uploaded_info.value
+            assert uploaded_download.failure() is None
+            uploaded_report = json.loads(Path(uploaded_download.path()).read_bytes())
+            assert uploaded_report["metadata"]["portfolio_source"] == "user-supplied CSV"
+            assert uploaded_report["metadata"]["portfolio_input_sha256"] == hashlib.sha256(fixture.read_bytes()).hexdigest()
+            assert uploaded_report["portfolio"] == report["portfolio"]
+            assert uploaded_report["stress"]["pnl"] == report["stress"]["pnl"]
             check_responsive(page)
         finally:
             page.screenshot(path="/tmp/fragility-browser-smoke.png", full_page=True)
