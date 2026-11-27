@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m venv /tmp/fragility-wheel-check
           /tmp/fragility-wheel-check/bin/python -m pip install dist/*.whl
-          /tmp/fragility-wheel-check/bin/python -c "from importlib.metadata import version; import fragility_atlas.core; assert version('fragility-atlas') == '1.0.0rc1'"
+          /tmp/fragility-wheel-check/bin/python -c "from importlib.metadata import version; import fragility_atlas.core; assert version('fragility-atlas') == '1.0.0'"
           /tmp/fragility-wheel-check/bin/fragility-atlas --help
       - name: Unit tests
         run: python -m pytest -q
