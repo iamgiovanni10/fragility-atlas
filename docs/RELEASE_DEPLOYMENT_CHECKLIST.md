@@ -1,6 +1,6 @@
 # Release deployment and acceptance checklist
 
-**Status: release candidate, not yet approved.** The public Streamlit app must remain unchanged until the release is reviewed.
+**Status: staging acceptance completed and owner authorized release, conditional on final CI.** Public deployment verification remains required.
 
 ## Before merging
 
