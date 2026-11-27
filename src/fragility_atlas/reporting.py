@@ -54,7 +54,7 @@ def report_pdf(report):
     _validate_report(report)
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, CondPageBreak
     from xml.sax.saxutils import escape
 
     rows = list(csv.reader(io.StringIO(report_csv(report))))
@@ -156,12 +156,15 @@ def report_pdf(report):
             try:
                 number = float(value)
                 if math.isfinite(number):
-                    display = format(number, ".8g")
+                    display = "0" if number == 0 else format(number, ".8g")
             except ValueError:
                 pass
         groups.setdefault(section.split(".")[0].split("[")[0], []).append([para(section), para(display)])
     for name, entries in groups.items():
-        story.append(Paragraph(escape(name.replace("_", " ").title()), styles["Heading2"]))
+        story.append(CondPageBreak(80))
+        heading = Paragraph(escape(name.replace("_", " ").title()), styles["Heading2"])
+        heading.keepWithNext = False
+        story.append(heading)
         story.append(table([["Field", "Value"]] + entries, [240, 253]))
 
     def footer(canvas, doc):
