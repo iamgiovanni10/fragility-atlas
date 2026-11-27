@@ -6,6 +6,7 @@ Synthetic portfolio data only. Not investment advice.
 import json
 from pathlib import Path
 
+import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -15,7 +16,7 @@ from fragility_atlas.workbench import hedge_diagnostics, scenario_pnl, scenario_
 
 st.set_page_config(page_title="Fragility Atlas", page_icon="📊", layout="wide")
 st.title("Fragility Atlas")
-st.caption("Scenario Intelligence v0.3 · Explainable reverse stress testing · Synthetic data")
+st.caption("QUANTITATIVE RISK RESEARCH / SCENARIO INTELLIGENCE")
 st.warning("Experimental model. Synthetic inputs and illustrative hedge costs. Not validated for trading or investment decisions.")
 
 DEMO = Path(__file__).resolve().parent / "examples" / "demo.json"
@@ -24,6 +25,16 @@ DEMO = Path(__file__).resolve().parent / "examples" / "demo.json"
 @st.cache_data
 def load_demo():
     return json.loads(DEMO.read_text(encoding="utf-8"))
+
+
+def signed_bar(data, measure, fmt):
+    return alt.Chart(data).mark_bar().encode(
+        x=alt.X(measure, type="quantitative", scale=alt.Scale(zero=True),
+                axis=alt.Axis(format=fmt)),
+        y=alt.Y("Factor:N", sort=None, axis=alt.Axis(labelLimit=220)),
+        color=alt.condition(alt.datum[measure] < 0, alt.value("#B54747"), alt.value("#287D68")),
+        tooltip=["Factor:N", alt.Tooltip(measure, type="quantitative", format=fmt)],
+    ).properties(height=150)
 
 
 raw = load_demo()
@@ -42,6 +53,8 @@ except (ValueError, KeyError, TypeError) as exc:
     st.error(f"Invalid model input: {exc}")
     st.stop()
 
+st.subheader("Risk snapshot")
+st.caption("Reverse stress results for the selected loss threshold and assumed covariance.")
 c1, c2, c3 = st.columns(3)
 c1.metric("Target loss", f"${loss:,.0f}")
 c2.metric("Mahalanobis distance", f"{result['mahalanobis_distance']:.3f}")
@@ -54,16 +67,23 @@ with tabs[0]:
         "Factor": list(result["shock"].keys()),
         "Shock (%)": [v * 100 for v in result["shock"].values()],
     })
-    st.bar_chart(shocks.set_index("Factor"), horizontal=True)
-    st.dataframe(shocks, hide_index=True, use_container_width=True)
+    left, right = st.columns([3, 2])
+    with left:
+        st.altair_chart(signed_bar(shocks, "Shock (%)", ".2f"), use_container_width=True)
+    with right:
+        st.dataframe(shocks, hide_index=True, use_container_width=True)
 
     st.subheader("Factor P&L attribution")
     attribution = pd.DataFrame({
         "Factor": list(result["factor_pnl_contributions"].keys()),
         "P&L (USD)": list(result["factor_pnl_contributions"].values()),
     })
-    st.bar_chart(attribution.set_index("Factor"), horizontal=True)
-    st.dataframe(attribution, hide_index=True, use_container_width=True)
+    left, right = st.columns([3, 2])
+    with left:
+        st.altair_chart(signed_bar(attribution, "P&L (USD)", ",.0f"), use_container_width=True)
+    with right:
+        st.dataframe(attribution, hide_index=True, use_container_width=True,
+                     column_config={"P&L (USD)": st.column_config.NumberColumn(format="dollar")})
     st.caption("These are linear scenario contributions, not causal explanations.")
 
 with tabs[1]:
@@ -142,4 +162,4 @@ with tabs[3]:
                        file_name="fragility_atlas_report.json", mime="application/json")
     st.caption("Diagnostics check arithmetic and constraints, not empirical model accuracy.")
 
-st.caption("Scenario Intelligence v0.3 · Synthetic inputs · No calibrated probabilities or live prices")
+st.caption("Fragility Atlas 1.0.0 · Synthetic inputs · No calibrated probabilities or live prices")

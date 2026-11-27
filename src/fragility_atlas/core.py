@@ -86,8 +86,8 @@ class Model:
             raise ValueError("hedges must be finite and uniquely named")
         if not np.all(np.isfinite(c)) or np.any(c <= 0):
             raise ValueError("hedge costs must be strictly positive")
-        if loss <= 0 or distance_budget <= 0 or max_units <= 0:
-            raise ValueError("positive loss, distance_budget and max_units required")
+        if not all(np.isfinite(v) and v > 0 for v in (loss, distance_budget, max_units)):
+            raise ValueError("finite positive loss, distance_budget and max_units required")
         # Optimize hedge dollar P&L sensitivities in MILLION dollars.
         # Scale the nonlinear risk constraint to order-one for SLSQP.
         # z = [positive units, negative units], so h = z[:k]-z[k:].
@@ -115,9 +115,13 @@ class Model:
                           constraints=[{"type": "ineq", "fun": lambda z: risk_limit - norm_risk(z)}],
                           options={"maxiter": 3000, "ftol": 1e-11})
         units = result.x[:k] - result.x[k:]
-        cap = float(norm_risk(result.x) * pnl_scale)
+        # Independent post-solve check in original units, not scaled SLSQP variables.
+        residual_exposure = self.exposure + H @ units
+        cap = float(distance_budget * np.sqrt(max(0., residual_exposure @ self.covariance @ residual_exposure)))
         tol = 1e-6 * max(1., loss)
-        if not result.success or cap > loss + tol:
+        if (not result.success or not np.all(np.isfinite(units))
+                or np.any(np.abs(units) > max_units + 1e-8 * max(1.0, max_units))
+                or not np.isfinite(cap) or cap > loss + tol):
             raise RuntimeError(f"no feasible hedge found: {result.message}; risk={cap}")
         return {
             "units": dict(zip(names, map(float, units))),

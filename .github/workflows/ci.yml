@@ -1,12 +1,62 @@
 name: CI
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - run: python -m pip install -e '.[dev]'
-      - run: pytest -q
+          python-version: ${{ matrix.python-version }}
+      - name: Install project, tests, and dashboard
+        run: python -m pip install -e '.[dev,dashboard]'
+      - name: Build distribution
+        run: |
+          python -m pip install build
+          python -m build --sdist --wheel
+      - name: Verify installed dependency consistency
+        run: python -m pip check
+      - name: Smoke-test installed wheel in isolated environment
+        shell: bash
+        run: |
+          python -m venv /tmp/fragility-wheel-check
+          /tmp/fragility-wheel-check/bin/python -m pip install dist/*.whl
+          /tmp/fragility-wheel-check/bin/python -c "from importlib.metadata import version; import fragility_atlas.core; assert version('fragility-atlas') == '1.0.0'"
+          /tmp/fragility-wheel-check/bin/fragility-atlas --help
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Lint for undefined names and syntax errors
+        run: python -m ruff check src tests dashboard.py pages --select E4,E7,E9,F63,F7,F82
+      - name: Compile dashboard
+        run: python -m py_compile dashboard.py pages/1_Research_Lab.py
+      - name: Import research modules
+        run: python -c "import fragility_atlas.historical, fragility_atlas.portfolio, fragility_atlas.stress, fragility_atlas.validation, fragility_atlas.sensitivity"
+      - name: Start Streamlit and verify HTTP health
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m streamlit run dashboard.py --server.headless true --server.port 8765 --browser.gatherUsageStats false > /tmp/fragility-streamlit.log 2>&1 &
+          streamlit_pid=$!
+          trap 'kill "$streamlit_pid" 2>/dev/null || true' EXIT
+          healthy=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8765/_stcore/health > /tmp/fragility-health.txt 2>/dev/null; then
+              healthy=1
+              break
+            fi
+            if ! kill -0 "$streamlit_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if [ "$healthy" -ne 1 ]; then
+            cat /tmp/fragility-streamlit.log
+            exit 1
+          fi
+          grep -q ok /tmp/fragility-health.txt

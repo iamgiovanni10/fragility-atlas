@@ -1,0 +1,4 @@
+position_id,quantity,price_usd,equities,rates,credit_spreads
+SYNTH_EQ,100,100,5000,-300,-100
+SYNTH_BOND,50,900,200,2500,-1800
+SYNTH_CREDIT,20,1200,600,400,-2200

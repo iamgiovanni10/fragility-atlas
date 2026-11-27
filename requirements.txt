@@ -1,0 +1,3 @@
+# Streamlit Community Cloud deployment dependencies.
+# Install this repository as a Python package with its dashboard extras.
+-e .[dashboard]

@@ -1,126 +1,66 @@
-## Scenario Intelligence v0.3 (experimental)
-
-The Scenario Explorer now evaluates a **single identical shock vector** against unhedged and hedged factor exposures, displaying both P&Ls and the difference. It also calculates the shock's Mahalanobis distance and checks whether the shock is within the covariance ellipsoid selected by the user. An outside-ellipsoid scenario is **not** subject to the optimized hedge's worst-loss bound. Scenario P&L excludes hedge acquisition costs. All inputs and hedges remain synthetic, and ellipsoid membership does not imply a calibrated probability.
-
 # Fragility Atlas
 
-**Explainable Reverse Stress Testing & Portfolio Fragility Analysis**
+**Quantitative Portfolio Risk & Resilience Research Platform**
 
-Fragility Atlas is an open-source **quantitative finance research prototype** for identifying the smallest covariance-adjusted combination of market-factor shocks that breaches a portfolio loss threshold, explaining the resulting factor P&L, and exploring cost-aware hedges under an ellipsoidal uncertainty set.
+> **Release status:** v1.0.0 source. Check GitHub Releases for publication status and the public app for deployed version. Successful CI does not establish independent model validation.
 
-> **Research question:** What is the nearest adverse market scenario that makes a portfolio exceed its loss tolerance—and what exposures drive that vulnerability?
+Fragility Atlas is an open-source, AI-assisted **quantitative-finance research prototype** built around interpretable linear factor exposures. It is not a live market-data platform, a trading system, or investment advice.
 
-**Status:** v0.1.0 research prototype · Python 3.10+ · synthetic examples · MIT license
+## Release-candidate capabilities
 
-## What it does today
-
-| Capability | Status | Method |
+| Module | Implemented research functionality | Key limitation |
 | --- | --- | --- |
-| Reverse stress testing | Implemented | Closed-form constrained Mahalanobis minimization |
-| Factor-level P&L attribution | Implemented | Linear exposure × factor shock |
-| Ellipsoidal hedge search | Implemented | L1-cost minimization using SciPy SLSQP |
-| Input validation | Implemented | Dimension, finiteness, symmetry, positive-definiteness checks |
-| Automated unit tests | Implemented | Pytest and GitHub Actions |
-| Historical data calibration | Planned | Not included in v0.1.0 |
-| Nonlinear instrument repricing | Planned | Not included in v0.1.0 |
-| Institutional model validation | Not performed | Required before any financial deployment |
+| Portfolio analytics | CSV holdings, marked value, factor sensitivities, position/factor P&L reconciliation | Linear sensitivities; user-supplied inputs |
+| Historical risk | Empirical VaR, fractional-tail expected shortfall, compounded drawdown, volatility | User-provided returns or synthetic seeded sample |
+| Stress testing | Custom and illustrative preset scenarios, factor attribution, historical factor-shock CSV replay | Presets are not named historical crises |
+| Reverse stress | Analytic minimum Mahalanobis-distance adverse scenario | Distance is not an estimated probability |
+| Robust hedging | Illustrative cost-minimizing SLSQP hedge, independent feasibility diagnostics | No global optimality certificate or executable market prices |
+| Scenario intelligence | Same-scenario hedged/unhedged P&L, uncertainty-set membership warning | Linear factor model |
+| Validation | Rolling out-of-sample historical VaR coverage diagnostic | Kupiec asymptotic test is not a certification |
+| Sensitivity | Reverse-stress sensitivity to modeled covariance/exposure assumptions | Synthetic or assumed covariance |
+| Dashboard | Risk Workbench and separate Research Lab Streamlit page | Browser deployment acceptance pending |
+| Reports | JSON, CSV and PDF research exports, UTC timestamps and input SHA-256 fingerprints | Download UX and staging deployment pending acceptance |
 
-## Why reverse stress testing?
-
-Conventional stress tests start with a scenario and estimate its impact. **Reverse stress testing** starts with an adverse outcome (for example, a loss exceeding $1 million) and searches for a scenario that produces it. The technique is established in financial risk research; Fragility Atlas does **not** claim to invent it.
-
-This prototype combines the scenario search with interpretable factor-level contributions and a constrained hedge exploration workflow.
-
-## Quick start
+## Run locally
 
 ```bash
-python -m pip install -e '.[dev]'
-pytest -q
+python -m pip install -e '.[dev,dashboard]'
+python -m pytest -q
+streamlit run dashboard.py
+```
+
+The Risk Workbench remains accessible from the dashboard. The Research Lab is in `pages/1_Research_Lab.py`. Download its synthetic sample portfolio, apply hypothetical factor shocks, optionally upload historical factor shocks and daily returns, and export a report.
+
+Command-line demo:
+
+```bash
 fragility-atlas examples/demo.json --loss 1000000
 fragility-atlas examples/demo.json --loss 1000000 --hedge --radius 2
 ```
 
-The demonstration uses **synthetic inputs and illustrative costs**. Do not interpret output as observed market conditions or investment advice.
+## Reproducibility and data conventions
 
-## Risk Workbench v0.2 (experimental)
+- Portfolio CSV: `position_id,quantity,price_usd,<factor columns...>`; factor sensitivities are USD P&L per unit decimal factor shock.
+- Historical returns CSV: one column of chronological **daily simple decimal returns** (e.g. `-0.02` is -2%).
+- Historical factor replay CSV: exactly the portfolio's factor columns; rows are chronological **decimal shocks**.
+- VaR: empirical inverse-CDF order statistic; expected shortfall: fractional-tail average. These are one-period measures, not automatically annualized.
+- Synthetic returns use a fixed random seed; reports label source assumptions and include input hashes. An input fingerprint verifies exact bytes, not authenticity or market provenance.
 
-The Streamlit interface now includes four tabs: Risk Overview, Scenario Explorer, Hedge Analysis, and Validation & Reports. The scenario explorer calculates linear P&L for user-entered hypothetical shocks; the hedge panel compares covariance-ellipsoid worst losses before and after the synthetic hedge. Diagnostics independently recompute the hedge constraint but do not establish empirical predictive accuracy or global solver optimality.
+See [Research Lab documentation](docs/RESEARCH_LAB.md), [mathematical methodology](docs/METHODOLOGY.md), [release acceptance contract](docs/V1_RELEASE_ACCEPTANCE.md), and [deployment checklist](docs/RELEASE_DEPLOYMENT_CHECKLIST.md).
 
-## Interactive dashboard (optional)
+## Scientific boundaries and release gates
 
-Run the Streamlit dashboard locally:
+This project has **no independently verified market calibration or institutional model validation**. The hedge optimizer is SLSQP with feasibility checks, not a globally certified convex optimizer. Historical return-risk and factor-stress inputs are not automatically reconciled. VaR backtest p-values can be unreliable with few breaches. No nonlinear repricing, trading integration, or verified live pricing is provided.
 
-```bash
-python -m pip install -e '.[dashboard]'
-streamlit run dashboard.py
-```
+Before v1.0 is released, verify CI for the exact release commit, staging navigation, real browser downloads, responsive layout, deployment configuration, and public smoke tests. Do not merge or tag the release candidate before these gates pass.
 
-The dashboard shows the synthetic minimum-distance scenario, factor-level P&L attribution, optional illustrative hedge optimization, and a downloadable JSON report. It does **not** provide live market prices, probability calibration, backtesting, or investment recommendations.
+## Development and AI assistance
 
-## Mathematical approach
-
-Let `b` be portfolio factor sensitivities, `Σ` a symmetric positive-definite covariance matrix, `x` a vector of factor shocks, and `L > 0` the loss threshold.
-
-```text
-minimize     xᵀ Σ⁻¹ x
-subject to   bᵀ x ≤ −L
-
-solution     x* = −L Σb / (bᵀΣb)
-distance     d* = L / sqrt(bᵀΣb)
-```
-
-For hedge matrix `H`, hedge positions `h`, and uncertainty radius `r`, the model constrains the worst-case linear loss to:
-
-```text
-r × sqrt((b + Hh)ᵀ Σ (b + Hh)) ≤ L
-```
-
-The optimizer minimizes illustrative linear absolute hedge expenditure `sum(cᵢ |hᵢ|)`. See [Mathematical methodology](docs/METHODOLOGY.md) for assumptions, derivation, interpretation, and validation considerations.
-
-**Important:** Mahalanobis distance is not a crisis probability; a feasible numerical solution is not proof of global optimality, and a modeled hedge is not necessarily tradeable.
-
-## Repository structure
-
-```text
-.github/workflows/ci.yml       Continuous integration
-src/fragility_atlas/core.py    Reverse stress and hedge calculations
-src/fragility_atlas/cli.py     Command-line interface
-tests/test_core.py             Unit tests
-examples/demo.json            Synthetic portfolio example
-docs/METHODOLOGY.md           Mathematical methodology
-pyproject.toml                Packaging and dependencies
-```
-
-## Research roadmap
-
-1. Reproducible, legally sourced historical factor datasets and out-of-sample evaluation.
-2. Empirical covariance estimation, regime sensitivity, and heavy-tail stress calibration.
-3. Convex optimization formulations with independently verifiable certificates.
-4. Nonlinear fixed-income and derivatives repricing with liquidity and transaction costs.
-5. Financial-network contagion models and transparent counterfactual explanations.
-6. Audit logs, data lineage, model governance, and independent validation.
-
-These are **future research directions**, not implemented features.
-
-## Limitations
-
-- Linear factor valuation; no gamma, defaults, nonlinear liquidity effects, or dynamic hedging.
-- Covariance geometry can understate tail dependence and regime shifts.
-- Synthetic factors and hedge costs; no live market data or execution integration.
-- SLSQP is a numerical method; results require independent verification.
-- No backtesting, regulatory approval, or independent production validation.
-
-## Development & AI assistance
-
-The initial prototype was created through an **AI-assisted development workflow**. AI tools were used substantially to generate the initial Python implementation, tests, documentation, and mathematical presentation. The project owner initiated the project and coordinated its publication and subsequent development. Code and numerical outputs should be independently reviewed before relying on them.
-
-This disclosure describes the development process; it does not imply that the project has been peer reviewed or independently validated.
-
-## Related research
-
-- Crépey et al., *Quantitative reverse stress testing, bottom up* (2023): https://doi.org/10.1080/14697688.2023.2187315
-- *Reverse stress testing: Scenario design for macroprudential stress tests*: https://doi.org/10.1111/mafi.12373
+The implementation, tests and documentation were developed with substantial AI assistance under the project owner's direction. Numerical outputs and claims require independent review before consequential use.
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
