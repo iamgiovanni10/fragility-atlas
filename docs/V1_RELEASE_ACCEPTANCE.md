@@ -74,3 +74,9 @@ Subsequent drawdown, report identity, documentation and regression-test changes 
 - Prior staging user checks confirmed navigation and exports; the updated visual layout and uploaded-data journey still require final staging confirmation. Responsive smoke checks are not comprehensive accessibility certification.
 - An earlier PDF download cancellation was observed; successful subsequent runs do not prove intermittent failures are eliminated.
 - Keep version 1.0.0rc1 and do not merge until final staging acceptance and release authorization. Re-run CI on the exact versioned release commit. Public deployment smoke test follows merge.
+
+## Final import and export acceptance checkpoint
+
+Commit `834a23804717dad431edd3b63ce90b3dff7ba201` passed [CI](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45914611160) and [Browser acceptance](https://github.com/iamgiovanni10/fragility-atlas/actions/runs/45914611202). Browser acceptance now verifies actual CSV upload, processed source label, byte-level SHA-256 provenance, unchanged portfolio and stress P&L, report downloads, viewport and keyboard smoke checks. The prior upload test failed before the processed source was confirmed; the new test retains all assertions and waits for the processed source label.
+
+Staging screenshots and reports supplied by the owner confirmed earlier chart and report changes. Subsequent full-width scenario comparison and PDF pagination changes passed automated checks but still require visual staging confirmation. No independent market calibration or accessibility certification is claimed. Release authorization and exact final version CI remain required.
