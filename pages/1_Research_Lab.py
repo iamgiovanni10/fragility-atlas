@@ -62,6 +62,7 @@ except (ValueError, UnicodeDecodeError) as exc:
     st.stop()
 
 st.subheader("Portfolio overview")
+st.caption("Portfolio source: " + ("synthetic example" if uploaded is None else "user-supplied CSV"))
 st.caption("Marked value and linear factor sensitivities from the selected portfolio.")
 a, b = st.columns(2)
 a.metric("Net marked portfolio value (USD)", f"${portfolio.value:,.2f}")
